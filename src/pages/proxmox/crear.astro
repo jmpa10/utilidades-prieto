@@ -1,0 +1,12 @@
+---
+import Portal from '../../layouts/Portal.astro';
+import CrearUsuarios from '../../components/CrearUsuarios';
+---
+<Portal titulo="Crear usuarios · Proxmox">
+  <header class="cabecera-pagina">
+    <a class="miga" href="/proxmox/">Proxmox</a>
+    <h1>Crear usuarios</h1>
+    <p>Da de alta a una clase entera o a una sola persona. Cada uno recibe un usuario, una contraseña y su propio pool.</p>
+  </header>
+  <CrearUsuarios client:load />
+</Portal>

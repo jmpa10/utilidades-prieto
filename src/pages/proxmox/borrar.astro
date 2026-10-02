@@ -1,0 +1,12 @@
+---
+import Portal from '../../layouts/Portal.astro';
+import BorrarUsuarios from '../../components/BorrarUsuarios';
+---
+<Portal titulo="Borrar usuarios · Proxmox">
+  <header class="cabecera-pagina">
+    <a class="miga" href="/proxmox/">Proxmox</a>
+    <h1>Borrar usuarios</h1>
+    <p>Elimina usuarios y pools al acabar el curso, junto con las máquinas que contengan.</p>
+  </header>
+  <BorrarUsuarios client:load />
+</Portal>

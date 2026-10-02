@@ -1,0 +1,7 @@
+services:
+  utilidades:
+    build: .
+    image: utilidades-prieto
+    restart: unless-stopped
+    ports:
+      - "8080:80"

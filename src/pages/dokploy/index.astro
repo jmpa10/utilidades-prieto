@@ -1,0 +1,16 @@
+---
+import Portal from '../../layouts/Portal.astro';
+import Icono from '../../components/Icono';
+---
+<Portal titulo="Dokploy">
+  <header class="cabecera-pagina">
+    <a class="miga" href="/">Inicio</a>
+    <h1>Dokploy</h1>
+    <p>Aquí irán las utilidades para preparar los despliegues de los alumnos en Dokploy.</p>
+  </header>
+  <div class="utilidad pronto" style="max-width:520px">
+    <span class="utilidad-icono"><Icono nombre="cohete" tam={28} /></span>
+    <h2>En preparación</h2>
+    <p>¿Qué te ahorraría más tiempo? Crear proyectos por alumno, dar acceso a repositorios, limpiar al final del curso… Anótalo y lo añadimos en la próxima versión.</p>
+  </div>
+</Portal>

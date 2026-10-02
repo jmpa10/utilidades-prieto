@@ -1,0 +1,59 @@
+---
+import Portal from '../layouts/Portal.astro';
+import Icono from '../components/Icono';
+import { SECCIONES } from '../lib/navegacion';
+import { CENTRO } from '../lib/centro';
+---
+<Portal titulo="Inicio">
+  <header class="saludo-cabecera">
+    <div class="saludo">
+      <h1>¿Qué necesitas preparar hoy?</h1>
+      <p>Herramientas del {CENTRO.departamento} para no tener que repetir a mano lo mismo con cada alumno. Eliges qué quieres hacer, revisas el resultado y te llevas el script para ejecutarlo en el servidor.</p>
+    </div>
+    <img class="saludo-logo" src="/img/logo-iesgp.png" alt={`Logo del ${CENTRO.nombre}`} width="457" height="464" />
+  </header>
+
+  <section class="utilidades" aria-label="Utilidades">
+    {SECCIONES.map((s) =>
+      s.pronto ? (
+        <div class="utilidad pronto">
+          <span class="utilidad-icono"><Icono nombre={s.icono} tam={28} /></span>
+          <h2>{s.nombre}</h2>
+          <p>{s.descripcion}</p>
+        </div>
+      ) : (
+        <a class="utilidad" href={`/${s.id}/`}>
+          <span class="utilidad-icono"><Icono nombre={s.icono} tam={28} /></span>
+          <h2>{s.nombre}</h2>
+          <p>{s.descripcion}</p>
+          <ul>{s.enlaces.map((e) => <li>{e.nombre}</li>)}</ul>
+        </a>
+      ),
+    )}
+  </section>
+
+  <section class="banda" aria-label="Cómo funciona">
+    <div>
+      <span class="banda-numero">Paso 1</span>
+      <h3>Rellenas el formulario</h3>
+      <p>La clase, la lista de alumnos y el espacio que tendrá cada uno.</p>
+    </div>
+    <div>
+      <span class="banda-numero">Paso 2</span>
+      <h3>Revisas el script</h3>
+      <p>Se genera en tu navegador. La página no envía ni guarda nombres ni contraseñas.</p>
+    </div>
+    <div>
+      <span class="banda-numero">Paso 3</span>
+      <h3>Lo ejecutas en el servidor</h3>
+      <p>Primero en modo simulación y luego de verdad. Puedes repetirlo sin duplicar nada.</p>
+    </div>
+  </section>
+  <section class="panel reutilizar">
+    <div>
+      <h2>¿Eres de otro centro?</h2>
+      <p>Es un proyecto de código abierto con licencia MIT. Puedes desplegarlo en tu instituto cambiando el nombre y el logo en un solo fichero, o proponer mejoras y nuevas utilidades.</p>
+    </div>
+    <a class="btn" href={CENTRO.repositorio} target="_blank" rel="noopener"><Icono nombre="github" tam={18} />Ver el código en GitHub</a>
+  </section>
+</Portal>

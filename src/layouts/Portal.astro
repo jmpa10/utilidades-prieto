@@ -1,0 +1,97 @@
+---
+import '../styles/global.css';
+import Icono from '../components/Icono';
+import { SECCIONES } from '../lib/navegacion';
+import { CENTRO } from '../lib/centro';
+
+interface Props {
+  titulo: string;
+  descripcion?: string;
+}
+const { titulo, descripcion = `Utilidades del ${CENTRO.departamento} del ${CENTRO.nombre} para el profesorado.` } = Astro.props;
+const ruta = Astro.url.pathname.replace(/\/?$/, '/');
+---
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={descripcion} />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href={CENTRO.logo} type="image/png" />
+    <title>{titulo} | Utilidades Prieto</title>
+    <script is:inline>
+      try {
+        const t = localStorage.getItem('utilidades-prieto:tema');
+        if (t) document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <div class="portal">
+      <aside class="lateral">
+        <a class="marca" href="/">
+          <img class="marca-logo" src={CENTRO.logo} alt={`Logo del ${CENTRO.nombre}`} width="52" height="53" />
+          <span class="marca-texto"><strong>Utilidades Prieto</strong><span>{CENTRO.departamento}</span><span>{CENTRO.nombre}</span></span>
+        </a>
+        <nav aria-label="Utilidades">
+          <div class="nav-grupo">
+            <a class="nav-enlace solo" href="/" aria-current={ruta === '/' ? 'page' : undefined}><Icono nombre="casa" tam={18} />Inicio</a>
+          </div>
+          {SECCIONES.map((s) => (
+            <div class="nav-grupo">
+              <span class="nav-grupo-titulo"><Icono nombre={s.icono} tam={20} />{s.nombre}</span>
+              {s.pronto ? (
+                <a class="nav-enlace" href={s.enlaces[0].href} aria-current={ruta === s.enlaces[0].href ? 'page' : undefined}>
+                  {s.enlaces[0].nombre}
+                </a>
+              ) : (
+                [{ href: `/${s.id}/`, nombre: 'Resumen' }, ...s.enlaces].map((e) => (
+                  <a class="nav-enlace" href={e.href} aria-current={ruta === e.href ? 'page' : undefined}>{e.nombre}</a>
+                ))
+              )}
+            </div>
+          ))}
+        </nav>
+        <div class="lateral-pie">
+          <a class="enlace-github" href={CENTRO.repositorio} target="_blank" rel="noopener">
+            <Icono nombre="github" tam={18} /><span>Código abierto en GitHub</span>
+          </a>
+          <button class="boton-tema" type="button" id="boton-tema" aria-label="Cambiar entre tema claro y oscuro">
+            <span data-icono="luna"><Icono nombre="luna" tam={18} /></span>
+            <span data-icono="sol" hidden><Icono nombre="sol" tam={18} /></span>
+          </button>
+        </div>
+      </aside>
+      <main class="principal">
+        <div class="contenido">
+          <slot />
+          <footer class="pie">
+            <span>{CENTRO.departamento} del {CENTRO.nombre}. Todo se genera en tu navegador: no se envían ni se guardan datos.</span>
+            <span>
+              <a href={CENTRO.repositorio} target="_blank" rel="noopener">Código fuente</a> con licencia MIT, por
+              <a href={CENTRO.autor.github} target="_blank" rel="noopener">{CENTRO.autor.nombre}</a>
+            </span>
+          </footer>
+        </div>
+      </main>
+    </div>
+    <slot name="fuera" />
+    <script>
+      const raiz = document.documentElement;
+      const boton = document.getElementById('boton-tema')!;
+      const oscuro = () =>
+        raiz.dataset.theme ? raiz.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+      const pintar = () => {
+        boton.querySelector<HTMLElement>('[data-icono="luna"]')!.hidden = oscuro();
+        boton.querySelector<HTMLElement>('[data-icono="sol"]')!.hidden = !oscuro();
+      };
+      pintar();
+      boton.addEventListener('click', () => {
+        raiz.dataset.theme = oscuro() ? 'light' : 'dark';
+        try { localStorage.setItem('utilidades-prieto:tema', raiz.dataset.theme); } catch {}
+        pintar();
+      });
+    </script>
+  </body>
+</html>

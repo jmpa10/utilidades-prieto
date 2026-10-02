@@ -1,0 +1,48 @@
+---
+import Portal from '../../layouts/Portal.astro';
+import Icono from '../../components/Icono';
+import { SECCIONES } from '../../lib/navegacion';
+const proxmox = SECCIONES.find((s) => s.id === 'proxmox')!;
+---
+<Portal titulo="Proxmox">
+  <header class="cabecera-pagina">
+    <a class="miga" href="/">Inicio</a>
+    <h1>Proxmox</h1>
+    <p>Cada alumno recibe un usuario y un pool de recursos propio donde montar sus máquinas, agrupados por clase.</p>
+  </header>
+
+  <section class="accesos" aria-label="Acciones">
+    {proxmox.enlaces.map((e) => (
+      <a class="utilidad" href={e.href}>
+        <span class="utilidad-icono"><Icono nombre={e.icono} tam={26} /></span>
+        <h3>{e.nombre}</h3>
+        <p>{e.descripcion}</p>
+      </a>
+    ))}
+  </section>
+
+  <section class="panel">
+    <div class="panel-cabecera">
+      <h2>Cómo queda organizado</h2>
+      <p>Para la clase 2º ASIR y el alumno Juan Pérez García:</p>
+    </div>
+    <div class="tabla-envoltorio">
+      <table>
+        <tbody>
+          <tr><th scope="row">Grupo de la clase</th><td class="mono">2asir</td><td>Reúne a todos los alumnos de la clase.</td></tr>
+          <tr><th scope="row">Pool de la clase</th><td class="mono">2asir</td><td>Contiene los pools de cada alumno.</td></tr>
+          <tr><th scope="row">Pool del alumno</th><td class="mono">2asir/jperez-2asir</td><td>Donde crea sus VMs y contenedores. Su comentario guarda la cuota.</td></tr>
+          <tr><th scope="row">Usuario</th><td class="mono">jperez-2asir@pve</td><td>Con el rol «Alumno» sobre su pool.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="aviso">
+    <Icono nombre="info" />
+    <span>
+      Con LVM-thin, Proxmox no puede limitar el espacio de cada pool. La cuota queda anotada y en
+      <a href="/proxmox/auditoria/">Uso de disco</a> tienes un script que avisa de quién se pasa.
+    </span>
+  </div>
+</Portal>

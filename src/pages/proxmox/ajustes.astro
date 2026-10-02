@@ -1,0 +1,12 @@
+---
+import Portal from '../../layouts/Portal.astro';
+import AjustesProxmox from '../../components/AjustesProxmox';
+---
+<Portal titulo="Ajustes · Proxmox">
+  <header class="cabecera-pagina">
+    <a class="miga" href="/proxmox/">Proxmox</a>
+    <h1>Ajustes</h1>
+    <p>Los valores que se rellenan solos cada vez que generas un script.</p>
+  </header>
+  <AjustesProxmox client:load />
+</Portal>
