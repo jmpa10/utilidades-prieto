@@ -3,6 +3,9 @@
  * mensajes y consultas a Proxmox. Se inserta tal cual (sin interpolar).
  */
 export const CABECERA_COMUN = String.raw`
+# Pegado desde la web: el fichero temporal se borra ya (bash lo sigue leyendo abierto).
+if [[ "${"$"}{UP_AUTOBORRAR:-}" == 1 ]]; then rm -f -- "$0"; fi
+
 DRY_RUN=0
 SI_A_TODO=0
 for arg in "$@"; do

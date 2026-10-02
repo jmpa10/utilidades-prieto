@@ -1,13 +1,26 @@
 import { useState } from 'preact/hooks';
-import VisorScript from './VisorScript';
+import VisorScript, { type Variante } from './VisorScript';
 import { claseId } from '../lib/names';
 import { scriptAuditoria } from '../lib/proxmox/audit';
 
 export default function Auditoria() {
   const [claseNombre, setClaseNombre] = useState('');
   const [umbral, setUmbral] = useState(90);
+  const [correo, setCorreo] = useState('');
   const clase = claseId(claseNombre);
   const fichero = `auditoria-${clase || 'cuotas'}.sh`;
+  const mail = correo.trim() ? ['--mail', correo.trim()] : [];
+
+  const variantes: Variante[] = [
+    { id: 'informe', nombre: 'Ver informe', args: [], explicacion: 'Muestra ahora mismo el uso de cada pool.' },
+    {
+      id: 'cron',
+      nombre: 'Informe diario',
+      args: ['--instalar-cron', ...mail],
+      explicacion: `Lo instala en el nodo para que se ejecute cada día a las 7:00${mail.length ? ' y avise por correo' : ''}.`,
+    },
+    { id: 'quitar', nombre: 'Quitar informe diario', args: ['--desinstalar-cron'], explicacion: 'Elimina el informe diario del nodo.' },
+  ];
 
   return (
     <>
@@ -27,21 +40,19 @@ export default function Auditoria() {
             <input id="a-umbral" type="number" min="1" max="100" value={umbral} onInput={(e) => setUmbral(Number(e.currentTarget.value) || 90)} />
             <small>Por encima de este uso, el pool aparece como «cerca».</small>
           </div>
+          <div class="campo">
+            <label for="a-correo">Correo para avisos</label>
+            <input id="a-correo" type="text" inputMode="email" placeholder="Opcional" value={correo} onInput={(e) => setCorreo(e.currentTarget.value)} />
+            <small>Solo para el informe diario. El nodo debe tener el correo configurado.</small>
+          </div>
         </div>
       </section>
       <section class="panel">
         <div class="panel-cabecera">
           <h2>Script de auditoría</h2>
-          <p>Solo lee: no para ni borra nada.</p>
+          <p>Solo lee: no para ni borra nada. El informe diario se guarda en <code>/var/log/utilidades-prieto/</code>.</p>
         </div>
-        <VisorScript script={scriptAuditoria({ clase, umbralAviso: umbral })} fichero={fichero} />
-        <h3 style="margin:24px 0 12px">Cómo usarlo</h3>
-        <ol class="pasos-ejecucion">
-          <li>Informe en el momento: <code>bash {fichero}</code></li>
-          <li>Informe diario a las 7:00 en <code>/var/log/utilidades-prieto/</code>: <code>bash {fichero} --instalar-cron</code></li>
-          <li>Con aviso por correo cuando alguien se pase: <code>bash {fichero} --instalar-cron --mail tu@correo.es</code> (el nodo debe tener el correo configurado)</li>
-          <li>Para quitarlo: <code>bash {fichero} --desinstalar-cron</code></li>
-        </ol>
+        <VisorScript script={scriptAuditoria({ clase, umbralAviso: umbral })} fichero={fichero} variantes={variantes} />
       </section>
     </>
   );

@@ -330,3 +330,14 @@ img.marca-logo { width: 52px; height: auto; background: none; box-shadow: none; 
 .reutilizar p { color: var(--tinta-suave); max-width: 60ch; margin-top: 6px; }
 .marca-texto span { font-size: 0.75rem; }
 @media (max-width: 900px) { .lateral nav { scrollbar-width: none; } .lateral nav::-webkit-scrollbar { display: none; } }
+
+/* ── Visor: pestañas y variantes ──────────────────────────── */
+.visor-bloque { display: flex; flex-direction: column; gap: 16px; }
+.variantes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.variante { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border: 2px solid var(--linea); border-radius: var(--radio); cursor: pointer; background: var(--superficie); }
+.variante input { width: 18px; height: 18px; margin-top: 3px; accent-color: var(--verde-sombra); flex: none; }
+.variante strong { display: block; }
+.variante small { display: block; color: var(--tinta-tenue); font-size: 0.8125rem; line-height: 1.4; }
+.variante.activa { border-color: var(--verde); box-shadow: 0 3px 0 var(--verde-sombra); }
+.variante.peligro input { accent-color: var(--rojo); }
+.variante.peligro.activa { border-color: var(--rojo); box-shadow: 0 3px 0 var(--rojo-sombra); }

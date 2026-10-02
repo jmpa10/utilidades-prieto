@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { createPortal } from 'preact/compat';
 import Icono from './Icono';
-import VisorScript, { ComoEjecutar } from './VisorScript';
+import VisorScript, { type Variante } from './VisorScript';
 import { AJUSTES_POR_DEFECTO, descargar, leerAjustes, type Ajustes } from '../lib/ajustes';
 import { asignarBases, baseUsuario, claseId, formatoLista, parsearLinea, parsearTexto, poolDe, usuarioCompleto, validarIdentificador, type Persona } from '../lib/names';
 import { generarPassword } from '../lib/passwords';
@@ -24,6 +24,10 @@ interface Credencial {
 }
 
 const PASOS = ['Clase', 'Alumnos', 'Revisión', 'Script'];
+const VARIANTES: Variante[] = [
+  { id: 'simular', nombre: 'Simular', args: ['--dry-run'], explicacion: 'Muestra todo lo que haría, sin cambiar nada en Proxmox.' },
+  { id: 'crear', nombre: 'Crear usuarios', args: [], explicacion: 'Crea grupo, pools, usuarios y permisos. Se puede repetir sin duplicar.' },
+];
 const EJEMPLO = `# Una persona por línea: Apellidos, Nombre
 Pérez García, Juan
 de la Fuente Ruiz, María José
@@ -368,9 +372,7 @@ function Lote({ ajustes }: { ajustes: Ajustes }) {
               <Icono nombre="fichero" />
               <span>Se ha descargado <code>resumen-{clase}.txt</code> con los usuarios y contraseñas creados. Guárdalo: lo necesitarás para borrar la clase.</span>
             </div>
-            <VisorScript script={script} fichero={`crear-${clase}.sh`} />
-            <h3 style="margin:24px 0 12px">Cómo ejecutarlo</h3>
-            <ComoEjecutar fichero={`crear-${clase}.sh`} conPasswords />
+            <VisorScript script={script} fichero={`crear-${clase}.sh`} variantes={VARIANTES} conPasswords />
           </>
         )}
 
@@ -473,9 +475,7 @@ function Individual({ ajustes }: { ajustes: Ajustes }) {
               <h2>Script listo</h2>
               <p>Crea <code>{usuario}@{ajustes.realm}</code> y su pool.</p>
             </div>
-            <VisorScript script={script} fichero={`crear-${usuario}.sh`} />
-            <h3 style="margin:24px 0 12px">Cómo ejecutarlo</h3>
-            <ComoEjecutar fichero={`crear-${usuario}.sh`} conPasswords />
+            <VisorScript script={script} fichero={`crear-${usuario}.sh`} variantes={VARIANTES} conPasswords />
           </section>
           <Credenciales
             ajustes={ajustes}

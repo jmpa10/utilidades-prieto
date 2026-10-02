@@ -1,4 +1,4 @@
-import { fechaHora, q } from '../shell';
+import { comentario, fechaHora, q } from '../shell';
 import { poolDe, usuarioCompleto } from '../names';
 import { CABECERA_COMUN } from './common';
 
@@ -26,7 +26,7 @@ export interface OpcionesCreacion {
 
 export function scriptCreacion(o: OpcionesCreacion): string {
   const n = o.usuarios.length;
-  const etiqueta = o.clase ? `${o.claseNombre || o.clase} (${o.clase})` : 'sin clase';
+  const etiqueta = o.clase ? `${comentario(o.claseNombre) || o.clase} (${o.clase})` : 'sin clase';
   const altas = o.usuarios
     .map((u) => `alta ${q(usuarioCompleto(u.base, o.clase))} ${q(poolDe(u.base, o.clase))} ${q(u.nombre)} ${q(u.password)}`)
     .join('\n');
@@ -35,7 +35,7 @@ export function scriptCreacion(o: OpcionesCreacion): string {
 # ──────────────────────────────────────────────────────────────
 #  Utilidades Prieto · Proxmox · Crear usuarios y pools
 #  Generado: ${fechaHora(o.fecha)}
-#  Clase: ${etiqueta} · ${n} usuario${n === 1 ? '' : 's'} · rol ${o.rol}${o.cuotaGB ? ` · cuota ${o.cuotaGB} GB` : ''}
+#  Clase: ${etiqueta} · ${n} usuario${n === 1 ? '' : 's'} · rol ${comentario(o.rol)}${o.cuotaGB ? ` · cuota ${o.cuotaGB} GB` : ''}
 #
 #  Uso:  bash crear-${o.clase || 'usuarios'}.sh [--dry-run]
 #
@@ -145,6 +145,7 @@ if (( ERRORES )); then
   error "Errores: $ERRORES"
   exit 1
 fi
-(( DRY_RUN )) || aviso "Recuerda borrar este script: contiene contraseñas."
+# Pegado desde la web ya se ha borrado solo; como fichero, hay que borrarlo a mano.
+(( DRY_RUN )) || [[ "\${UP_AUTOBORRAR:-}" == 1 ]] || aviso "Recuerda borrar este script: contiene contraseñas."
 `;
 }

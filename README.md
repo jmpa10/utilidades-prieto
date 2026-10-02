@@ -21,7 +21,12 @@ Para la clase «2º ASIR» y el alumno «Pérez García, Juan»:
 - **Borrar** (`/proxmox/borrar/`): una clase entera (la busca en el servidor), desde el resumen .txt (respeta los usuarios aunque se editaran a mano) o desde la lista original, o un usuario suelto. Para y destruye las VMs/CTs del pool.
 - **Uso de disco** (`/proxmox/auditoria/`): LVM-thin no permite cuotas, así que la cuota se anota en el pool y este script avisa de quién la supera. Se puede instalar como cron diario.
 
-Todos los scripts admiten `--dry-run` y se pueden repetir sin duplicar nada. El rol `Alumno` debe existir antes: el script solo lo asigna.
+Cada script se puede usar de dos formas:
+
+- **Pegar en la terminal** (por defecto): se copia un bloque y se pega en la Shell del nodo (web de Proxmox → nodo → *Shell*, o SSH como root). El bloque vuelca el script en un fichero temporal, lo ejecuta en un proceso aparte (un error no cierra tu sesión) y lo borra. Desactiva la expansión de `!` y no deja las contraseñas en el historial. Primero se pega la versión «Simular» y después la real.
+- **Fichero .sh**: se descarga, se copia al nodo y se ejecuta con `bash fichero.sh [--dry-run]`.
+
+Todos admiten `--dry-run` y se pueden repetir sin duplicar nada. El rol `Alumno` debe existir antes: el script solo lo asigna.
 
 ## Reutilizarlo en tu centro
 

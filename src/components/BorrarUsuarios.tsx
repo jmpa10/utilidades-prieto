@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import Icono from './Icono';
-import VisorScript, { ComoEjecutar } from './VisorScript';
+import VisorScript, { type Variante } from './VisorScript';
 import { AJUSTES_POR_DEFECTO, leerAjustes } from '../lib/ajustes';
 import { asignarBases, claseId, parsearTexto, poolDe, usuarioCompleto, validarIdentificador } from '../lib/names';
 import { scriptBorrado, type ModoBorrado } from '../lib/proxmox/delete';
@@ -10,6 +10,11 @@ const MODOS: { id: ModoBorrado; nombre: string; icono: string }[] = [
   { id: 'clase', nombre: 'Toda una clase', icono: 'usuarios' },
   { id: 'lista', nombre: 'Desde el TXT', icono: 'fichero' },
   { id: 'usuario', nombre: 'Un usuario', icono: 'usuarioMas' },
+];
+
+const VARIANTES: Variante[] = [
+  { id: 'simular', nombre: 'Simular', args: ['--dry-run'], explicacion: 'Lista lo que se borraría, sin tocar nada.' },
+  { id: 'borrar', nombre: 'Borrar', args: [], explicacion: 'Te pedirá escribir el nombre para confirmar antes de borrar.', peligro: true },
 ];
 
 export default function BorrarUsuarios() {
@@ -128,9 +133,7 @@ export default function BorrarUsuarios() {
             <h2>Script de borrado</h2>
             <p>Antes de borrar nada, muestra qué va a eliminar y te pide confirmación.</p>
           </div>
-          <VisorScript script={scriptBorrado({ modo, clase, realm, bases })} fichero={fichero} />
-          <h3 style="margin:24px 0 12px">Cómo ejecutarlo</h3>
-          <ComoEjecutar fichero={fichero} destructivo />
+          <VisorScript script={scriptBorrado({ modo, clase, realm, bases })} fichero={fichero} variantes={VARIANTES} />
         </section>
       )}
     </>

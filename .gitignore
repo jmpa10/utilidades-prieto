@@ -1,5 +1,30 @@
+# Dependencias y compilación
 node_modules/
 dist/
 .astro/
+coverage/
+
+# Registros
+*.log
+npm-debug.log*
+
+# Entorno local
+.env
+.env.*
+
+# Sistema y editores
 .DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Herramientas
 .playwright-mcp/
+
+# Ficheros que descarga la web: llevan nombres y contraseñas de alumnos
+crear-*.sh
+borrar-*.sh
+auditoria-*.sh
+credenciales-*.csv
+resumen-*.txt

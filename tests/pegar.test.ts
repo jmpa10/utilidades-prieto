@@ -1,0 +1,116 @@
+import { afterAll, describe, expect, it } from 'vitest';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, mkdirSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { paraPegar, DELIMITADOR } from '../src/lib/pegar';
+import { scriptCreacion, type OpcionesCreacion } from '../src/lib/proxmox/create';
+import { scriptBorrado } from '../src/lib/proxmox/delete';
+import { scriptAuditoria } from '../src/lib/proxmox/audit';
+
+const dir = mkdtempSync(join(tmpdir(), 'pegar-'));
+const bin = join(dir, 'bin');
+const tmp = join(dir, 'tmp');
+mkdirSync(bin);
+mkdirSync(tmp);
+for (const c of ['pveum', 'pvesh', 'pveversion']) symlinkSync(resolve('tests/mock/pve.py'), join(bin, c));
+const estado = join(dir, 'estado.json');
+afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+// Datos con todo lo que puede romper un pegado: apóstrofos, «!» y $.
+const opciones: OpcionesCreacion = {
+  clase: '1dart',
+  claseNombre: `1º D'Art!x`,
+  realm: 'pve',
+  rol: 'Alumno',
+  cuotaGB: 40,
+  storage: 'local-lvm',
+  rolStorage: '',
+  usuarios: [
+    { base: 'aobrien', nombre: `Ana O'Brien!x`, password: `a!b'c$HOME` },
+    { base: 'lruiz', nombre: 'Luis Ruiz', password: '!!ultimo' },
+  ],
+};
+
+/**
+ * Busca «!» que bash expandiría como historial al pegar todo el bloque de una vez
+ * (pegado entre corchetes): fuera de comillas simples y seguido de algo que no sea
+ * espacio, salto de línea, = o (.
+ */
+function exclamacionesPeligrosas(texto: string): string[] {
+  const malas: string[] = [];
+  let simple = false;
+  let doble = false;
+  for (let i = 0; i < texto.length; i++) {
+    const c = texto[i];
+    if (simple) {
+      if (c === "'") simple = false;
+      continue;
+    }
+    if (c === '\\') { i++; continue; }
+    if (c === "'" && !doble) simple = true;
+    else if (c === '"') doble = !doble;
+    else if (c === '!') {
+      const sig = texto[i + 1] ?? ' ';
+      if (!' \t\n\r=('.includes(sig) && !(doble && sig === '"')) malas.push(texto.slice(Math.max(0, i - 30), i + 10));
+    }
+  }
+  return malas;
+}
+
+const scripts = {
+  creacion: scriptCreacion(opciones),
+  borradoClase: scriptBorrado({ modo: 'clase', clase: '1dart', realm: 'pve', bases: [] }),
+  borradoLista: scriptBorrado({ modo: 'lista', clase: '1dart', realm: 'pve', bases: ['aobrien'] }),
+  auditoria: scriptAuditoria({ clase: '1dart', umbralAviso: 90 }),
+};
+
+describe('bloque para pegar', () => {
+  for (const [nombre, script] of Object.entries(scripts)) {
+    it(`${nombre}: sin «!» expandibles ni tabuladores`, () => {
+      const bloque = paraPegar(script, { args: ['--dry-run'] });
+      expect(exclamacionesPeligrosas(bloque)).toEqual([]);
+      expect(bloque).not.toContain('\t');
+    });
+  }
+
+  it('rechaza un script que contenga el delimitador', () => {
+    expect(() => paraPegar(`echo\n${DELIMITADOR}\n`)).toThrow();
+  });
+
+  /** Simula el pegado: una shell interactiva leyendo el bloque línea a línea. */
+  function pegar(bloque: string) {
+    const r = spawnSync('bash', ['--norc', '-i'], {
+      input: bloque.replace('[[ $EUID -eq 0 ]]', 'true'),
+      encoding: 'utf8',
+      env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, PVE_STATE: estado, TMPDIR: tmp, PS1: '$ ', PS2: '> ' },
+    });
+    return r.stdout + r.stderr;
+  }
+
+  it('crea los usuarios al pegarlo, con contraseñas intactas, y no deja ficheros', () => {
+    writeFileSync(estado, JSON.stringify({ version: '8.2.4', users: {}, groups: {}, pools: {}, roles: ['Alumno'], acl: [], storages: ['local-lvm'], vms: {} }));
+    const salida = pegar(paraPegar(scripts.creacion, { autoborrar: true }));
+    const s = JSON.parse(readFileSync(estado, 'utf8'));
+    expect(s.users['aobrien-1dart@pve'], salida).toMatchObject({ password: `a!b'c$HOME`, comment: `Ana O'Brien!x` });
+    expect(s.users['lruiz-1dart@pve'].password).toBe('!!ultimo');
+    expect(salida).toContain('Creados: 2');
+    expect(salida).not.toContain('Recuerda borrar');
+    expect(readdirSync(tmp)).toEqual([]);
+  });
+
+  it('la simulación pegada no cambia nada', () => {
+    writeFileSync(estado, JSON.stringify({ version: '8.2.4', users: {}, groups: {}, pools: {}, roles: ['Alumno'], acl: [], storages: ['local-lvm'], vms: {} }));
+    const salida = pegar(paraPegar(scripts.creacion, { args: ['--dry-run'], autoborrar: true }));
+    expect(salida).toContain('Modo simulación');
+    expect(JSON.parse(readFileSync(estado, 'utf8')).users).toEqual({});
+    expect(readdirSync(tmp)).toEqual([]);
+  });
+
+  it('un fallo dentro del script no cierra la terminal', () => {
+    writeFileSync(estado, JSON.stringify({ version: '8.2.4', users: {}, groups: {}, pools: {}, roles: [], acl: [], storages: ['local-lvm'], vms: {} }));
+    const salida = pegar(paraPegar(scripts.creacion, { autoborrar: true }) + 'echo SIGUE_VIVA\n');
+    expect(salida).toContain("El rol 'Alumno' no existe");
+    expect(salida).toContain('SIGUE_VIVA');
+  });
+});
