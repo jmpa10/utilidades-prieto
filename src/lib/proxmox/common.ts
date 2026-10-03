@@ -8,12 +8,16 @@ if [[ "${"$"}{UP_AUTOBORRAR:-}" == 1 ]]; then rm -f -- "$0"; fi
 
 DRY_RUN=0
 SI_A_TODO=0
+ACCION=""
 for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY_RUN=1 ;;
     --yes|-y) SI_A_TODO=1 ;;
-    -h|--help) sed -n '2,12p' "$0"; exit 0 ;;
-    *) echo "Opción desconocida: $arg" >&2; exit 2 ;;
+    -h|--help) sed -n '2,14p' "$0"; exit 0 ;;
+    -*) echo "Opción desconocida: $arg" >&2; exit 2 ;;
+    *)
+      if [[ -n "$ACCION" ]]; then echo "Sobra el argumento: $arg" >&2; exit 2; fi
+      ACCION="$arg" ;;
   esac
 done
 
@@ -91,5 +95,81 @@ for m in d.get("members", []):
         vistos.add(m.get("storage"))
         print("storage", "-", m.get("storage"))
 '
+}
+
+# confirmar <palabra>: pide escribirla antes de algo que no se puede deshacer.
+confirmar() {
+  if (( DRY_RUN || SI_A_TODO )); then return 0; fi
+  [[ -t 0 ]] || fallo "Sin terminal para confirmar: ejecuta con --yes si estás seguro."
+  printf '\n%sEsta acción no se puede deshacer.%s Escribe «%s» para continuar: ' "$C_E" "$C_0" "$1"
+  local respuesta
+  read -r respuesta
+  [[ "$respuesta" == "$1" ]] || fallo "Cancelado."
+}
+
+# destruir_vm <tipo> <nodo> <vmid>: la para y la destruye con sus discos.
+destruir_vm() {
+  run pvesh create "/nodes/$2/$1/$3/status/stop" >/dev/null 2>&1 || true
+  run pvesh delete "/nodes/$2/$1/$3" --purge 1 --destroy-unreferenced-disks 1
+}
+
+# vms_objetivo <pools> <filtro> <etiqueta>: máquinas (no plantillas) de esos pools.
+# <pools> va separado por comas; si un elemento acaba en «/», es toda la clase.
+# Imprime «tipo nodo vmid estado pool nombre» por máquina.
+vms_objetivo() {
+  pvesh get /cluster/resources --type vm --output-format json | python3 -c '
+import json, sys
+pools = [p for p in sys.argv[1].split(",") if p]
+filtro, etiqueta = sys.argv[2].lower(), sys.argv[3].lower()
+def en_pools(p):
+    return any(p == x or (x.endswith("/") and p.startswith(x)) for x in pools)
+for r in sorted(json.load(sys.stdin), key=lambda r: (r.get("pool") or "", r.get("vmid", 0))):
+    pool, nombre = r.get("pool") or "", r.get("name") or ""
+    if r.get("template") or not en_pools(pool):
+        continue
+    if filtro and filtro not in nombre.lower():
+        continue
+    tags = [t.strip().lower() for t in (r.get("tags") or "").replace(",", ";").split(";") if t.strip()]
+    if etiqueta and etiqueta not in tags:
+        continue
+    print(r["type"], r["node"], r["vmid"], r.get("status", "?"), pool, nombre or "-")
+' "$1" "$2" "$3"
+}
+
+# pools_objetivo <pools>: pools de alumno que existen y coinciden (para informes).
+pools_objetivo() {
+  python3 -c '
+import sys
+pools = [p for p in sys.argv[1].split(",") if p]
+for linea in sys.stdin.read().split():
+    if any(linea == x or (x.endswith("/") and linea.startswith(x)) for x in pools):
+        print(linea)
+' "$1" <<<"$POOLS"
+}
+
+# Tareas en paralelo: lanzar <comando…> y, al final, terminar_paralelo.
+MAX_PARALELO=8
+FALLOS=""
+lanzar() {
+  if (( DRY_RUN )); then
+    # Las funciones propias (destruir_vm…) ya muestran sus comandos con run.
+    if declare -F "$1" >/dev/null; then "$@"; else run "$@"; fi
+    return 0
+  fi
+  if [[ -z "$FALLOS" ]]; then
+    FALLOS=$(mktemp); ERRLOG=$(mktemp)
+    trap 'rm -f "$FALLOS" "$ERRLOG"' EXIT
+  fi
+  ( "$@" >/dev/null 2>>"$ERRLOG" || echo "$*" >>"$FALLOS" ) &
+  while (( $(jobs -rp | wc -l) >= MAX_PARALELO )); do sleep 0.2; done
+}
+terminar_paralelo() {
+  wait
+  if [[ -n "$FALLOS" && -s "$FALLOS" ]]; then
+    error "Fallaron $(wc -l <"$FALLOS" | tr -d ' ') tarea(s):"
+    sed 's/^/      /' "$FALLOS" >&2
+    sed 's/^/      /' "$ERRLOG" >&2
+    return 1
+  fi
 }
 `;

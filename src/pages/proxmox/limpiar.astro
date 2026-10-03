@@ -1,0 +1,12 @@
+---
+import Portal from '../../layouts/Portal.astro';
+import Limpiar from '../../components/Limpiar';
+---
+<Portal titulo="Limpiar una práctica · Proxmox">
+  <header class="cabecera-pagina">
+    <a class="miga" href="/proxmox/">Proxmox</a>
+    <h1>Limpiar una práctica</h1>
+    <p>Libera espacio destruyendo las máquinas de una práctica que ya ha terminado.</p>
+  </header>
+  <Limpiar client:load />
+</Portal>

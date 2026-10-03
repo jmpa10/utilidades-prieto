@@ -8,6 +8,15 @@ import { scriptCreacion, type OpcionesCreacion } from '../src/lib/proxmox/create
 import { scriptBorrado } from '../src/lib/proxmox/delete';
 import { scriptAuditoria } from '../src/lib/proxmox/audit';
 import { scriptPreparar } from '../src/lib/proxmox/preparar';
+import { scriptEnergia } from '../src/lib/proxmox/energia';
+import { scriptSnapshots } from '../src/lib/proxmox/snapshots';
+import { scriptRecoger } from '../src/lib/proxmox/recoger';
+import { scriptLimpiar } from '../src/lib/proxmox/limpiar';
+import { scriptRepartir } from '../src/lib/proxmox/repartir';
+import { scriptEstado } from '../src/lib/proxmox/estado';
+import { scriptPassword } from '../src/lib/proxmox/password';
+import { scriptProfesores } from '../src/lib/proxmox/profesores';
+import { scriptMover } from '../src/lib/proxmox/mover';
 
 const dir = mkdtempSync(join(tmpdir(), 'pegar-'));
 const bin = join(dir, 'bin');
@@ -69,6 +78,15 @@ const scripts = {
   borradoLista: scriptBorrado({ modo: 'lista', clase: '1dart', realm: 'pve', bases: ['aobrien'] }),
   auditoria: scriptAuditoria({ clase: '1dart', umbralAviso: 90 }),
   preparar: scriptPreparar({ rol: 'Alumno' }),
+  energia: scriptEnergia({ clase: '1dart', bases: [], filtro: `d'a!x`, etiqueta: '', espera: 60 }),
+  snapshots: scriptSnapshots({ clase: '1dart', bases: ['aobrien'], filtro: '', etiqueta: 'p1', nombre: 'antes-p1', descripcion: `Antes de l'examen!x` }),
+  recoger: scriptRecoger({ clase: '1dart', bases: [], filtro: 'deb', etiqueta: '', practica: 'p1' }),
+  limpiar: scriptLimpiar({ clase: '1dart', bases: [], filtro: 'deb', etiqueta: '' }),
+  repartir: scriptRepartir({ clase: '1dart', bases: [], plantilla: `deb'!x`, prefijo: 'deb', storage: 'ssd-vms', encender: true }),
+  estado: scriptEstado({ clase: '1dart', bases: [], filtro: '', etiqueta: '', realm: 'pve' }),
+  password: scriptPassword({ usuarios: [{ userid: 'aobrien-1dart@pve', password: `a!b'c$HOME` }] }),
+  profesores: scriptProfesores({ clase: '1dart', profesores: ['profe1@pve'], rolesProfesor: 'PVEVMAdmin', storageIsos: 'isos-hdd' }),
+  mover: scriptMover({ realm: 'pve', rol: 'Alumno', claseOrigen: '1dart', baseOrigen: 'aobrien', claseDestino: '2dam', baseDestino: 'aobrien', password: `x!y'z` }),
 };
 
 describe('bloque para pegar', () => {
@@ -77,6 +95,10 @@ describe('bloque para pegar', () => {
       const bloque = paraPegar(script, { args: ['--dry-run'] });
       expect(exclamacionesPeligrosas(bloque)).toEqual([]);
       expect(bloque).not.toContain('\t');
+      // «$VAR» seguido de un carácter no ASCII: bash podría leerlo como parte del nombre.
+      const codigo = script.split('\n').filter((l) => !l.trimStart().startsWith('#')).join('\n');
+      expect(codigo.match(/\$[A-Za-z_0-9][A-Za-z0-9_]*[^\x00-\x7F]/g)).toBeNull();
+      expect(spawnSync('bash', ['-n'], { input: script }).status).toBe(0);
     });
   }
 

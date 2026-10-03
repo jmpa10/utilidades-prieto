@@ -1,0 +1,12 @@
+---
+import Portal from '../../layouts/Portal.astro';
+import Profesores from '../../components/Profesores';
+---
+<Portal titulo="Profesores de una clase · Proxmox">
+  <header class="cabecera-pagina">
+    <a class="miga" href="/proxmox/">Proxmox</a>
+    <h1>Profesores de una clase</h1>
+    <p>Añade o quita profesores de una clase ya creada.</p>
+  </header>
+  <Profesores client:load />
+</Portal>

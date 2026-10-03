@@ -1,0 +1,12 @@
+---
+import Portal from '../../layouts/Portal.astro';
+import Energia from '../../components/Energia';
+---
+<Portal titulo="Encender y apagar · Proxmox">
+  <header class="cabecera-pagina">
+    <a class="miga" href="/proxmox/">Proxmox</a>
+    <h1>Encender y apagar</h1>
+    <p>Apaga la clase al terminar la sesión o enciéndela antes de empezar, de una sola vez.</p>
+  </header>
+  <Energia client:load />
+</Portal>

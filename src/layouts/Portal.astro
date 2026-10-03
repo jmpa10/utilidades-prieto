@@ -1,7 +1,7 @@
 ---
 import '../styles/global.css';
 import Icono from '../components/Icono';
-import { SECCIONES } from '../lib/navegacion';
+import { SECCIONES, porGrupos } from '../lib/navegacion';
 import { CENTRO } from '../lib/centro';
 
 interface Props {
@@ -46,9 +46,17 @@ const ruta = Astro.url.pathname.replace(/\/?$/, '/');
                   {s.enlaces[0].nombre}
                 </a>
               ) : (
-                [{ href: `/${s.id}/`, nombre: 'Resumen' }, ...s.enlaces].map((e) => (
-                  <a class="nav-enlace" href={e.href} aria-current={ruta === e.href ? 'page' : undefined}>{e.nombre}</a>
-                ))
+                <>
+                  <a class="nav-enlace" href={`/${s.id}/`} aria-current={ruta === `/${s.id}/` ? 'page' : undefined}>Resumen</a>
+                  {porGrupos(s.enlaces).map(([grupo, enlaces]) => (
+                    <>
+                      {grupo && <span class="nav-subgrupo">{grupo}</span>}
+                      {enlaces.map((e) => (
+                        <a class="nav-enlace" href={e.href} aria-current={ruta === e.href ? 'page' : undefined}>{e.nombre}</a>
+                      ))}
+                    </>
+                  ))}
+                </>
               )}
             </div>
           ))}

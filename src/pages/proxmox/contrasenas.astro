@@ -1,0 +1,12 @@
+---
+import Portal from '../../layouts/Portal.astro';
+import Contrasenas from '../../components/Contrasenas';
+---
+<Portal titulo="Restablecer contraseñas · Proxmox">
+  <header class="cabecera-pagina">
+    <a class="miga" href="/proxmox/">Proxmox</a>
+    <h1>Restablecer contraseñas</h1>
+    <p>Una contraseña nueva para quien la ha olvidado, con su papeleta.</p>
+  </header>
+  <Contrasenas client:load />
+</Portal>

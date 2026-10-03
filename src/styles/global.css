@@ -344,3 +344,14 @@ img.marca-logo { width: 52px; height: auto; background: none; box-shadow: none; 
 .privilegios summary { cursor: pointer; font-weight: 800; margin-bottom: 16px; }
 .privilegios[open] { margin-bottom: 8px; }
 .aviso + .aviso { margin-top: -16px; }
+
+/* ── Navegación agrupada ──────────────────────────────────── */
+.nav-subgrupo { display: block; padding: 10px 12px 2px 40px; font-size: 0.75rem; font-weight: 800; color: #a9d3ce; }
+.lateral .nav-enlace { padding-top: 6px; padding-bottom: 6px; }
+.grupo-accesos { display: flex; flex-direction: column; gap: 12px; }
+.grupo-accesos h2 { font-size: 1.125rem; color: var(--tinta-suave); }
+@media (max-width: 900px) { .nav-subgrupo { display: none; } }
+.lateral { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.25) transparent; }
+.lateral::-webkit-scrollbar { width: 6px; }
+.lateral::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 3px; }
+.marca-texto strong { white-space: nowrap; font-size: 1.0625rem; }

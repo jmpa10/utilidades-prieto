@@ -1,0 +1,12 @@
+---
+import Portal from '../../layouts/Portal.astro';
+import Repartir from '../../components/Repartir';
+---
+<Portal titulo="Repartir una plantilla · Proxmox">
+  <header class="cabecera-pagina">
+    <a class="miga" href="/proxmox/">Proxmox</a>
+    <h1>Repartir una plantilla</h1>
+    <p>Cada alumno recibe en su pool su propia copia de la máquina de la práctica.</p>
+  </header>
+  <Repartir client:load />
+</Portal>

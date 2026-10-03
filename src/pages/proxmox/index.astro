@@ -2,7 +2,7 @@
 import Portal from '../../layouts/Portal.astro';
 import Icono from '../../components/Icono';
 import PrepararProxmox from '../../components/PrepararProxmox';
-import { SECCIONES } from '../../lib/navegacion';
+import { SECCIONES, porGrupos } from '../../lib/navegacion';
 const proxmox = SECCIONES.find((s) => s.id === 'proxmox')!;
 ---
 <Portal titulo="Proxmox">
@@ -12,15 +12,20 @@ const proxmox = SECCIONES.find((s) => s.id === 'proxmox')!;
     <p>Cada alumno recibe un usuario y un pool de recursos propio donde montar sus máquinas, agrupados por clase.</p>
   </header>
 
-  <section class="accesos" aria-label="Acciones">
-    {proxmox.enlaces.map((e) => (
-      <a class="utilidad" href={e.href}>
-        <span class="utilidad-icono"><Icono nombre={e.icono} tam={26} /></span>
-        <h3>{e.nombre}</h3>
-        <p>{e.descripcion}</p>
-      </a>
-    ))}
-  </section>
+  {porGrupos(proxmox.enlaces).map(([grupo, enlaces]) => (
+    <section class="grupo-accesos" aria-label={grupo}>
+      <h2>{grupo}</h2>
+      <div class="accesos">
+        {enlaces.map((e) => (
+          <a class="utilidad" href={e.href}>
+            <span class="utilidad-icono"><Icono nombre={e.icono} tam={26} /></span>
+            <h3>{e.nombre}</h3>
+            <p>{e.descripcion}</p>
+          </a>
+        ))}
+      </div>
+    </section>
+  ))}
 
   <section class="panel">
     <div class="panel-cabecera">

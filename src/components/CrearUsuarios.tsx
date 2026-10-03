@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { createPortal } from 'preact/compat';
 import Icono from './Icono';
 import VisorScript, { type Variante } from './VisorScript';
+import Credenciales from './Credenciales';
+import { listaProfesores, profesorValido } from '../lib/profesores';
 import { AJUSTES_POR_DEFECTO, descargar, leerAjustes, recordarBridge, type Ajustes } from '../lib/ajustes';
 import { asignarBases, baseUsuario, claseId, formatoLista, parsearLinea, parsearTexto, poolDe, usuarioCompleto, validarIdentificador, type Persona } from '../lib/names';
 import { generarPassword } from '../lib/passwords';
@@ -14,13 +15,6 @@ interface Fila {
   base: string;
   password: string;
   avisos: string[];
-}
-
-interface Credencial {
-  nombre: string;
-  usuario: string;
-  pool: string;
-  password: string;
 }
 
 const PASOS = ['Clase', 'Alumnos', 'Revisión', 'Script'];
@@ -111,13 +105,6 @@ function CamposRecursos({ valor, onChange, conClase }: { valor: Recursos; onChan
 }
 
 /* ── Red y profesores de la clase ─────────────────────────── */
-/** «profe1, profe2@pve» → ['profe1@pve', 'profe2@pve']. */
-function listaProfesores(texto: string, realm: string): string[] {
-  return [...new Set(texto.split(/[\s,;]+/).filter(Boolean).map((p) => (p.includes('@') ? p : `${p}@${realm}`)))];
-}
-
-const profesorValido = (p: string) => /^[a-z0-9][a-z0-9._-]*@[a-z0-9_-]+$/i.test(p);
-
 function CamposClase({ bridge, profesores, realm, onBridge, onProfesores }: {
   bridge: string; profesores: string; realm: string; onBridge: (v: string) => void; onProfesores: (v: string) => void;
 }) {
@@ -134,75 +121,6 @@ function CamposClase({ bridge, profesores, realm, onBridge, onProfesores }: {
         <input id="profesores" type="text" placeholder="profe1@pve, profe2@pve" value={profesores} onInput={(e) => onProfesores(e.currentTarget.value)} />
         {malos.length ? <small class="error">No parece un usuario: {malos.join(', ')}</small> : <small>Usuarios que ya existen. Verán y gestionarán las máquinas de toda la clase.</small>}
       </div>
-    </div>
-  );
-}
-
-/* ── Credenciales: CSV y papeletas ────────────────────────── */
-function Credenciales({ lista, ajustes, etiqueta, resumen }: { lista: Credencial[]; ajustes: Ajustes; etiqueta: string; resumen: string }) {
-  const [imprimir, setImprimir] = useState(false);
-
-  useEffect(() => {
-    if (!imprimir) return;
-    const fin = () => {
-      document.body.classList.remove('imprimiendo');
-      setImprimir(false);
-    };
-    document.body.classList.add('imprimiendo');
-    window.addEventListener('afterprint', fin, { once: true });
-    const t = setTimeout(() => window.print(), 50);
-    return () => {
-      clearTimeout(t);
-      window.removeEventListener('afterprint', fin);
-    };
-  }, [imprimir]);
-
-  function csv() {
-    const celda = (s: string) => `"${s.replace(/"/g, '""')}"`;
-    const filas = [['Nombre', 'Usuario', 'Contraseña', 'Pool', 'Acceso'], ...lista.map((c) => [c.nombre, c.usuario, c.password, c.pool, ajustes.urlProxmox])];
-    descargar(`credenciales-${etiqueta}.csv`, '﻿' + filas.map((f) => f.map(celda).join(';')).join('\r\n'), 'text/csv');
-  }
-
-  return (
-    <div class="panel">
-      <div class="panel-cabecera">
-        <h3>Resumen y credenciales</h3>
-        <p>
-          Guárdalos antes de cerrar la página: no se almacenan en ningún sitio. El resumen .txt te sirve de registro
-          y para <a href="/proxmox/borrar/">borrar estos usuarios</a> más adelante.
-        </p>
-      </div>
-      <div class="acciones-grupo">
-        <button type="button" class="btn btn-primario" onClick={() => descargar(`resumen-${etiqueta}.txt`, resumen)}>
-          <Icono nombre="fichero" tam={18} />Descargar resumen
-        </button>
-        <button type="button" class="btn btn-azul" onClick={csv}><Icono nombre="descargar" tam={18} />Descargar CSV</button>
-        <button type="button" class="btn" onClick={() => setImprimir(true)}><Icono nombre="imprimir" tam={18} />Imprimir papeletas</button>
-      </div>
-      {!ajustes.urlProxmox && (
-        <p style="margin-top:14px;color:var(--tinta-tenue);font-size:.875rem">
-          Añade la dirección del Proxmox en <a href="/proxmox/ajustes/">Ajustes</a> para que aparezca en las papeletas.
-        </p>
-      )}
-      {imprimir &&
-        createPortal(
-          <div class="papeletas">
-            {lista.map((c) => (
-              <div class="papeleta" key={c.usuario}>
-                <h4>{c.nombre}</h4>
-                <p>{ajustes.centro} · Acceso a Proxmox</p>
-                <dl>
-                  {ajustes.urlProxmox && (<><dt>Dirección</dt><dd>{ajustes.urlProxmox}</dd></>)}
-                  <dt>Usuario</dt><dd>{c.usuario.replace(/@.*/, '')}</dd>
-                  <dt>Dominio</dt><dd>{ajustes.realm === 'pve' ? 'Proxmox VE authentication server' : ajustes.realm}</dd>
-                  <dt>Contraseña</dt><dd>{c.password}</dd>
-                  <dt>Tu pool</dt><dd>{c.pool}</dd>
-                </dl>
-              </div>
-            ))}
-          </div>,
-          document.body,
-        )}
     </div>
   );
 }

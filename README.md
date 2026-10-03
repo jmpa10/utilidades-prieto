@@ -22,6 +22,21 @@ Antes de la primera clase, pega una vez el bloque **Preparar Proxmox** (página 
 
 - **Crear** (`/proxmox/crear/`): desde un TXT `Apellidos, Nombre` o de uno en uno (también vale para profesores, sin clase). Al generar el script de una clase se descarga un **resumen .txt** con los usuarios, pools y contraseñas creados. También puedes descargar las credenciales en CSV o imprimir papeletas.
 - **Borrar** (`/proxmox/borrar/`): una clase entera (la busca en el servidor), desde el resumen .txt (respeta los usuarios aunque se editaran a mano) o desde la lista original, o un usuario suelto. Para y destruye las VMs/CTs del pool.
+- **Mover alumno** (`/proxmox/mover/`): pasa a un alumno a otra clase. Proxmox no permite renombrar usuarios, así que recibe uno nuevo (`jperez-2dam`) con contraseña nueva y se lleva sus máquinas.
+- **Profesores** (`/proxmox/profesores/`): añade o quita profesores de una clase ya creada.
+
+**En el aula** (toda la clase, algunos alumnos o las máquinas que coincidan con un nombre o una etiqueta):
+
+- **Encender y apagar** (`/proxmox/energia/`): apagado ordenado, que se fuerza tras una espera, o encendido, en paralelo.
+- **Snapshots** (`/proxmox/snapshots/`): crear, ver, volver o borrar un snapshot con nombre en todas las máquinas.
+- **Repartir plantilla** (`/proxmox/repartir/`): una copia completa de una plantilla en el pool de cada alumno (`debian-jperez`…), con el siguiente VMID libre. No duplica si se repite.
+- **Recoger prácticas** (`/proxmox/recoger/`): snapshot `entrega-<práctica>` en cada máquina y lista de quién no ha entregado.
+- **Limpiar práctica** (`/proxmox/limpiar/`): destruye las máquinas de una práctica terminada. El filtro es obligatorio.
+
+**Seguimiento:**
+
+- **Estado de la clase** (`/proxmox/estado/`): por alumno, sus máquinas, cuáles están encendidas, RAM, vCPU y disco frente a la cuota, y quién no tiene ninguna.
+- **Contraseñas** (`/proxmox/contrasenas/`): contraseñas nuevas para uno o varios alumnos (o toda la clase con su resumen .txt), con papeletas.
 - **Uso de disco** (`/proxmox/auditoria/`): LVM-thin no permite cuotas, así que la cuota se anota en el pool y este script avisa de quién la supera. Se puede instalar como cron diario.
 
 Cada script se puede usar de dos formas:

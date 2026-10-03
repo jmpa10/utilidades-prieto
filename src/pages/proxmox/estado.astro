@@ -1,0 +1,12 @@
+---
+import Portal from '../../layouts/Portal.astro';
+import EstadoClase from '../../components/EstadoClase';
+---
+<Portal titulo="Estado de la clase · Proxmox">
+  <header class="cabecera-pagina">
+    <a class="miga" href="/proxmox/">Proxmox</a>
+    <h1>Estado de la clase</h1>
+    <p>Lo que tiene cada alumno: máquinas, cuáles están encendidas y cuánto ocupan.</p>
+  </header>
+  <EstadoClase client:load />
+</Portal>
