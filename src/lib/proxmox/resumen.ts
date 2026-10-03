@@ -8,6 +8,10 @@ export interface OpcionesResumen {
   rol: string;
   cuotaGB: number | null;
   storage: string;
+  storageIsos: string;
+  poolPlantillas: string;
+  bridge: string;
+  profesores: string[];
   urlProxmox: string;
   centro: string;
   usuarios: LineaResumen[];
@@ -35,6 +39,12 @@ export function resumenTxt(o: OpcionesResumen): string {
     `# Rol:            ${o.rol}`,
     `# Cuota:          ${o.cuotaGB ? `${o.cuotaGB} GB por pool` : 'sin cuota'}`,
     `# Storage:        ${o.storage || '-'}`,
+    ...(o.clase ? [
+      `# Bridge:         ${o.bridge || '-'}`,
+      `# ISOs:           ${o.storageIsos || '-'}`,
+      `# Plantillas:     ${o.poolPlantillas || '-'}`,
+      `# Profesores:     ${o.profesores.join(', ') || '-'}`,
+    ] : []),
     ...(o.urlProxmox ? [`# Acceso:         ${o.urlProxmox}`] : []),
     `#`,
     `# ⚠ Contiene las contraseñas iniciales. Guárdalo en un sitio seguro.`,

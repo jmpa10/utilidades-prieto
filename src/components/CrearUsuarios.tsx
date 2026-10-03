@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { createPortal } from 'preact/compat';
 import Icono from './Icono';
 import VisorScript, { type Variante } from './VisorScript';
-import { AJUSTES_POR_DEFECTO, descargar, leerAjustes, type Ajustes } from '../lib/ajustes';
+import { AJUSTES_POR_DEFECTO, descargar, leerAjustes, recordarBridge, type Ajustes } from '../lib/ajustes';
 import { asignarBases, baseUsuario, claseId, formatoLista, parsearLinea, parsearTexto, poolDe, usuarioCompleto, validarIdentificador, type Persona } from '../lib/names';
 import { generarPassword } from '../lib/passwords';
 import { scriptCreacion } from '../lib/proxmox/create';
@@ -59,12 +59,21 @@ export default function CrearUsuarios() {
 /* ── Opciones comunes de recursos ─────────────────────────── */
 interface Recursos {
   cuotaGB: number;
-  storage: string;
-  rolStorage: string;
   rol: string;
+  storage: string;
+  storageIsos: string;
+  poolPlantillas: string;
 }
 
-function CamposRecursos({ valor, onChange }: { valor: Recursos; onChange: (r: Recursos) => void }) {
+const recursosDe = (a: Ajustes): Recursos => ({
+  cuotaGB: a.cuotaGB,
+  rol: a.rol,
+  storage: a.storage,
+  storageIsos: a.storageIsos,
+  poolPlantillas: a.poolPlantillas,
+});
+
+function CamposRecursos({ valor, onChange, conClase }: { valor: Recursos; onChange: (r: Recursos) => void; conClase: boolean }) {
   const set = (parcial: Partial<Recursos>) => onChange({ ...valor, ...parcial });
   return (
     <div class="campos">
@@ -76,17 +85,54 @@ function CamposRecursos({ valor, onChange }: { valor: Recursos; onChange: (r: Re
       <div class="campo">
         <label for="rol">Rol sobre su pool</label>
         <input id="rol" type="text" value={valor.rol} onInput={(e) => set({ rol: e.currentTarget.value.trim() })} />
-        <small>Debe existir ya en Proxmox.</small>
+        <small>Debe existir ya. Créalo con <a href="/proxmox/#preparar">Preparar Proxmox</a>.</small>
       </div>
       <div class="campo">
-        <label for="storage">Storage del pool</label>
-        <input id="storage" type="text" placeholder="local-lvm" value={valor.storage} onInput={(e) => set({ storage: e.currentTarget.value.trim() })} />
-        <small>Se añade al pool de cada alumno. Vacío: no se añade.</small>
+        <label for="storage">Storage de discos</label>
+        <input id="storage" type="text" placeholder="ssd-vms" value={valor.storage} onInput={(e) => set({ storage: e.currentTarget.value.trim() })} />
+        <small>Se añade al pool de cada alumno para que cree ahí sus discos.</small>
+      </div>
+      {conClase && (
+        <>
+          <div class="campo">
+            <label for="storageIsos">Storage de ISOs</label>
+            <input id="storageIsos" type="text" placeholder="isos-hdd" value={valor.storageIsos} onInput={(e) => set({ storageIsos: e.currentTarget.value.trim() })} />
+            <small>La clase puede usarlas, pero no subir ni borrar.</small>
+          </div>
+          <div class="campo">
+            <label for="plantillas">Pool de plantillas</label>
+            <input id="plantillas" type="text" placeholder="Vacío: no se usa" value={valor.poolPlantillas} onInput={(e) => set({ poolPlantillas: e.currentTarget.value.trim() })} />
+            <small>La clase puede clonar las plantillas de este pool.</small>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ── Red y profesores de la clase ─────────────────────────── */
+/** «profe1, profe2@pve» → ['profe1@pve', 'profe2@pve']. */
+function listaProfesores(texto: string, realm: string): string[] {
+  return [...new Set(texto.split(/[\s,;]+/).filter(Boolean).map((p) => (p.includes('@') ? p : `${p}@${realm}`)))];
+}
+
+const profesorValido = (p: string) => /^[a-z0-9][a-z0-9._-]*@[a-z0-9_-]+$/i.test(p);
+
+function CamposClase({ bridge, profesores, realm, onBridge, onProfesores }: {
+  bridge: string; profesores: string; realm: string; onBridge: (v: string) => void; onProfesores: (v: string) => void;
+}) {
+  const malos = listaProfesores(profesores, realm).filter((p) => !profesorValido(p));
+  return (
+    <div class="campos">
+      <div class="campo">
+        <label for="bridge">Bridge de la clase</label>
+        <input id="bridge" type="text" placeholder="vmbr2asir" value={bridge} onInput={(e) => onBridge(e.currentTarget.value.trim())} />
+        <small>{bridge ? 'Solo esta clase podrá conectar sus VMs a él.' : 'Sin bridge, los alumnos no podrán poner red a sus VMs.'}</small>
       </div>
       <div class="campo">
-        <label for="rolStorage">Rol de la clase sobre ese storage</label>
-        <input id="rolStorage" type="text" placeholder="PVEDatastoreUser" value={valor.rolStorage} onInput={(e) => set({ rolStorage: e.currentTarget.value.trim() })} />
-        <small>Opcional. Vacío si ya tenéis ese permiso puesto.</small>
+        <label for="profesores">Profesores de la clase</label>
+        <input id="profesores" type="text" placeholder="profe1@pve, profe2@pve" value={profesores} onInput={(e) => onProfesores(e.currentTarget.value)} />
+        {malos.length ? <small class="error">No parece un usuario: {malos.join(', ')}</small> : <small>Usuarios que ya existen. Verán y gestionarán las máquinas de toda la clase.</small>}
       </div>
     </div>
   );
@@ -169,15 +215,24 @@ function Lote({ ajustes }: { ajustes: Ajustes }) {
   const [texto, setTexto] = useState('');
   const [filas, setFilas] = useState<Fila[]>([]);
   const [textoFilas, setTextoFilas] = useState<string | null>(null);
-  const [recursos, setRecursos] = useState<Recursos>({ cuotaGB: ajustes.cuotaGB, storage: ajustes.storage, rolStorage: ajustes.rolStorage, rol: ajustes.rol });
+  const [recursos, setRecursos] = useState<Recursos>(recursosDe(ajustes));
+  const [bridge, setBridge] = useState('');
+  const [bridgeEditado, setBridgeEditado] = useState(false);
+  const [profesoresTexto, setProfesoresTexto] = useState('');
   const [arrastrando, setArrastrando] = useState(false);
   const fichero = useRef<HTMLInputElement>(null);
   const titulo = useRef<HTMLHeadingElement>(null);
 
-  useEffect(() => setRecursos({ cuotaGB: ajustes.cuotaGB, storage: ajustes.storage, rolStorage: ajustes.rolStorage, rol: ajustes.rol }), [ajustes]);
+  useEffect(() => setRecursos(recursosDe(ajustes)), [ajustes]);
   useEffect(() => titulo.current?.focus(), [paso]);
 
   const clase = claseId(claseNombre);
+  // Propone el bridge que se usó la última vez para esta clase.
+  useEffect(() => {
+    if (!bridgeEditado) setBridge(ajustes.bridges[clase] ?? '');
+  }, [clase, ajustes]);
+  const profesores = listaProfesores(profesoresTexto, ajustes.realm);
+  const profesoresMal = profesores.some((p) => !profesorValido(p));
   const errorClase = claseNombre ? validarIdentificador(clase) : null;
   const personas = useMemo(() => parsearTexto(texto), [texto]);
   const n = Number(esperados) || 0;
@@ -199,14 +254,20 @@ function Lote({ ajustes }: { ajustes: Ajustes }) {
   const script = useMemo(
     () =>
       paso === 3
-        ? scriptCreacion({ clase, claseNombre, realm: ajustes.realm, rol: recursos.rol, cuotaGB: recursos.cuotaGB || null, storage: recursos.storage, rolStorage: recursos.rolStorage, usuarios: filas.map((f) => ({ base: f.base, nombre: f.persona.completo, password: f.password })) })
+        ? scriptCreacion({
+            clase, claseNombre, realm: ajustes.realm, rol: recursos.rol, cuotaGB: recursos.cuotaGB || null,
+            storage: recursos.storage, storageIsos: recursos.storageIsos, poolPlantillas: recursos.poolPlantillas,
+            bridge, profesores, rolesProfesor: ajustes.rolesProfesor,
+            usuarios: filas.map((f) => ({ base: f.base, nombre: f.persona.completo, password: f.password })),
+          })
         : '',
-    [paso, filas, recursos, clase, claseNombre, ajustes.realm],
+    [paso, filas, recursos, clase, claseNombre, ajustes, bridge, profesoresTexto],
   );
 
   const resumenLote = () =>
     resumenTxt({
       clase, claseNombre, realm: ajustes.realm, rol: recursos.rol, cuotaGB: recursos.cuotaGB || null, storage: recursos.storage,
+      storageIsos: recursos.storageIsos, poolPlantillas: recursos.poolPlantillas, bridge, profesores,
       urlProxmox: ajustes.urlProxmox, centro: ajustes.centro,
       usuarios: filas.map((f) => ({ userid: `${usuarioCompleto(f.base, clase)}@${ajustes.realm}`, pool: poolDe(f.base, clase), password: f.password, nombre: formatoLista(f.persona) })),
     });
@@ -217,11 +278,14 @@ function Lote({ ajustes }: { ajustes: Ajustes }) {
   }
 
   const editar = (id: number, parcial: Partial<Fila>) => setFilas((fs) => fs.map((f) => (f.id === id ? { ...f, ...parcial } : f)));
-  const puedeAvanzar = [!!clase && !errorClase, personas.length > 0, filas.length > 0 && !hayErrores, true][paso];
+  const puedeAvanzar = [!!clase && !errorClase && !profesoresMal, personas.length > 0, filas.length > 0 && !hayErrores, true][paso];
   const irA = (p: number) => {
     if (p >= 2) construirFilas();
     // Al generar el script se descarga también el resumen, para que el profesor no lo olvide.
-    if (p === 3 && paso === 2) descargar(`resumen-${clase}.txt`, resumenLote());
+    if (p === 3 && paso === 2) {
+      descargar(`resumen-${clase}.txt`, resumenLote());
+      recordarBridge(clase, bridge);
+    }
     setPaso(p);
   };
 
@@ -257,11 +321,21 @@ function Lote({ ajustes }: { ajustes: Ajustes }) {
                 <small>Para avisarte si la lista no cuadra.</small>
               </div>
             </div>
+            <h3 style="margin:28px 0 16px">Red y profesores</h3>
+            <CamposClase
+              bridge={bridge}
+              profesores={profesoresTexto}
+              realm={ajustes.realm}
+              onBridge={(v) => (setBridge(v), setBridgeEditado(true))}
+              onProfesores={setProfesoresTexto}
+            />
             {clase && !errorClase && (
               <div class="aviso aviso-ok" style="margin-top:20px">
                 <Icono nombre="info" />
                 <span>
-                  Cada alumno tendrá el usuario <code>jperez-{clase}@{ajustes.realm}</code> y el pool <code>{clase}/jperez-{clase}</code>, dentro del pool y del grupo <code>{clase}</code>.
+                  Cada alumno tendrá el usuario <code>jperez-{clase}@{ajustes.realm}</code> y su propio pool <code>{clase}/jperez-{clase}</code>, donde solo él ve sus máquinas.
+                  {bridge && <> La clase usará el bridge <code>{bridge}</code>.</>}
+                  {profesores.length > 0 && <> {profesores.length === 1 ? 'El profesor' : 'Los profesores'} {profesores.map((p, i) => <><code>{p}</code>{i < profesores.length - 1 ? ', ' : ''}</>)} verán toda la clase.</>}
                 </span>
               </div>
             )}
@@ -358,7 +432,7 @@ function Lote({ ajustes }: { ajustes: Ajustes }) {
               </table>
             </div>
             <h3 style="margin:28px 0 16px">Recursos y permisos</h3>
-            <CamposRecursos valor={recursos} onChange={setRecursos} />
+            <CamposRecursos valor={recursos} onChange={setRecursos} conClase />
           </>
         )}
 
@@ -408,26 +482,36 @@ function Individual({ ajustes }: { ajustes: Ajustes }) {
   const [baseEditada, setBaseEditada] = useState(false);
   const [claseNombre, setClaseNombre] = useState('');
   const [password, setPassword] = useState('');
-  const [recursos, setRecursos] = useState<Recursos>({ cuotaGB: ajustes.cuotaGB, storage: ajustes.storage, rolStorage: '', rol: ajustes.rol });
+  const [recursos, setRecursos] = useState<Recursos>(recursosDe(ajustes));
+  const [bridge, setBridge] = useState('');
+  const [bridgeEditado, setBridgeEditado] = useState(false);
   const [generado, setGenerado] = useState(false);
 
   useEffect(() => setPassword(generarPassword(ajustes.estiloPassword)), [ajustes.estiloPassword]);
-  useEffect(() => setRecursos({ cuotaGB: ajustes.cuotaGB, storage: ajustes.storage, rolStorage: '', rol: ajustes.rol }), [ajustes]);
+  useEffect(() => setRecursos(recursosDe(ajustes)), [ajustes]);
 
   const persona = parsearLinea(nombre);
   useEffect(() => {
     if (!baseEditada) setBase(persona ? baseUsuario(persona) : '');
   }, [nombre]);
-  useEffect(() => setGenerado(false), [nombre, base, claseNombre, password, recursos]);
+  useEffect(() => setGenerado(false), [nombre, base, claseNombre, password, recursos, bridge]);
 
   const clase = claseId(claseNombre);
+  useEffect(() => {
+    if (!bridgeEditado) setBridge(ajustes.bridges[clase] ?? '');
+  }, [clase, ajustes]);
   const usuario = usuarioCompleto(base, clase);
   const errorUsuario = base ? validarIdentificador(usuario) : null;
   const completo = persona?.completo ?? nombre.trim();
   const valido = !!completo && !!base && !errorUsuario && !!password && !!recursos.rol;
 
   const script = generado
-    ? scriptCreacion({ clase, claseNombre, realm: ajustes.realm, rol: recursos.rol, cuotaGB: recursos.cuotaGB || null, storage: recursos.storage, rolStorage: recursos.rolStorage, usuarios: [{ base, nombre: completo, password }] })
+    ? scriptCreacion({
+        clase, claseNombre, realm: ajustes.realm, rol: recursos.rol, cuotaGB: recursos.cuotaGB || null,
+        storage: recursos.storage, storageIsos: recursos.storageIsos, poolPlantillas: recursos.poolPlantillas,
+        bridge, profesores: [], rolesProfesor: ajustes.rolesProfesor,
+        usuarios: [{ base, nombre: completo, password }],
+      })
     : '';
 
   return (
@@ -448,6 +532,13 @@ function Individual({ ajustes }: { ajustes: Ajustes }) {
             <input id="ind-clase" type="text" placeholder="2º ASIR" value={claseNombre} onInput={(e) => setClaseNombre(e.currentTarget.value)} />
             <small>Vacío para un profesor: tendrá un pool propio fuera de las clases.</small>
           </div>
+          {clase && (
+            <div class="campo">
+              <label for="ind-bridge">Bridge de la clase</label>
+              <input id="ind-bridge" type="text" placeholder="vmbr2asir" value={bridge} onInput={(e) => (setBridge(e.currentTarget.value.trim()), setBridgeEditado(true))} />
+              <small>Si la clase ya existe, se reutiliza todo lo que tenga.</small>
+            </div>
+          )}
           <div class="campo">
             <label for="ind-usuario">Usuario</label>
             <input id="ind-usuario" type="text" value={base} aria-invalid={!!errorUsuario} onInput={(e) => (setBase(e.currentTarget.value.toLowerCase().trim()), setBaseEditada(true))} />
@@ -462,10 +553,10 @@ function Individual({ ajustes }: { ajustes: Ajustes }) {
           </div>
         </div>
         <h3 style="margin:28px 0 16px">Recursos y permisos</h3>
-        <CamposRecursos valor={recursos} onChange={setRecursos} />
+        <CamposRecursos valor={recursos} onChange={setRecursos} conClase={!!clase} />
         <div class="acciones">
           <span />
-          <button type="button" class="btn btn-primario" disabled={!valido} onClick={() => setGenerado(true)}>Generar script<Icono nombre="adelante" tam={18} /></button>
+          <button type="button" class="btn btn-primario" disabled={!valido} onClick={() => (setGenerado(true), recordarBridge(clase, bridge))}>Generar script<Icono nombre="adelante" tam={18} /></button>
         </div>
       </section>
       {generado && (
@@ -480,7 +571,7 @@ function Individual({ ajustes }: { ajustes: Ajustes }) {
           <Credenciales
             ajustes={ajustes}
             etiqueta={usuario}
-            resumen={resumenTxt({ clase, claseNombre, realm: ajustes.realm, rol: recursos.rol, cuotaGB: recursos.cuotaGB || null, storage: recursos.storage, urlProxmox: ajustes.urlProxmox, centro: ajustes.centro, usuarios: [{ userid: `${usuario}@${ajustes.realm}`, pool: poolDe(base, clase), password, nombre: persona ? formatoLista(persona) : completo }] })}
+            resumen={resumenTxt({ clase, claseNombre, realm: ajustes.realm, rol: recursos.rol, cuotaGB: recursos.cuotaGB || null, storage: recursos.storage, storageIsos: clase ? recursos.storageIsos : '', poolPlantillas: clase ? recursos.poolPlantillas : '', bridge: clase ? bridge : '', profesores: [], urlProxmox: ajustes.urlProxmox, centro: ajustes.centro, usuarios: [{ userid: `${usuario}@${ajustes.realm}`, pool: poolDe(base, clase), password, nombre: persona ? formatoLista(persona) : completo }] })}
             lista={[{ nombre: completo, usuario: `${usuario}@${ajustes.realm}`, pool: poolDe(base, clase), password }]} />
         </>
       )}

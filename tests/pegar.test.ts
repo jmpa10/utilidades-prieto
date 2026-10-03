@@ -7,6 +7,7 @@ import { paraPegar, DELIMITADOR } from '../src/lib/pegar';
 import { scriptCreacion, type OpcionesCreacion } from '../src/lib/proxmox/create';
 import { scriptBorrado } from '../src/lib/proxmox/delete';
 import { scriptAuditoria } from '../src/lib/proxmox/audit';
+import { scriptPreparar } from '../src/lib/proxmox/preparar';
 
 const dir = mkdtempSync(join(tmpdir(), 'pegar-'));
 const bin = join(dir, 'bin');
@@ -25,7 +26,11 @@ const opciones: OpcionesCreacion = {
   rol: 'Alumno',
   cuotaGB: 40,
   storage: 'local-lvm',
-  rolStorage: '',
+  storageIsos: 'local',
+  bridge: 'vmbr1',
+  poolPlantillas: '',
+  profesores: [`o'neil!x@pve`],
+  rolesProfesor: 'PVEVMAdmin',
   usuarios: [
     { base: 'aobrien', nombre: `Ana O'Brien!x`, password: `a!b'c$HOME` },
     { base: 'lruiz', nombre: 'Luis Ruiz', password: '!!ultimo' },
@@ -63,6 +68,7 @@ const scripts = {
   borradoClase: scriptBorrado({ modo: 'clase', clase: '1dart', realm: 'pve', bases: [] }),
   borradoLista: scriptBorrado({ modo: 'lista', clase: '1dart', realm: 'pve', bases: ['aobrien'] }),
   auditoria: scriptAuditoria({ clase: '1dart', umbralAviso: 90 }),
+  preparar: scriptPreparar({ rol: 'Alumno' }),
 };
 
 describe('bloque para pegar', () => {
@@ -89,7 +95,7 @@ describe('bloque para pegar', () => {
   }
 
   it('crea los usuarios al pegarlo, con contraseñas intactas, y no deja ficheros', () => {
-    writeFileSync(estado, JSON.stringify({ version: '8.2.4', users: {}, groups: {}, pools: {}, roles: ['Alumno'], acl: [], storages: ['local-lvm'], vms: {} }));
+    writeFileSync(estado, JSON.stringify({ version: '8.2.4', users: {}, groups: {}, pools: {}, roles: ['Alumno', 'PVESDNUser', 'PVEVMAdmin', 'PVEDatastoreUser'], acl: [], storages: ['local-lvm', 'local'], bridges: ['vmbr1'], vms: {} }));
     const salida = pegar(paraPegar(scripts.creacion, { autoborrar: true }));
     const s = JSON.parse(readFileSync(estado, 'utf8'));
     expect(s.users['aobrien-1dart@pve'], salida).toMatchObject({ password: `a!b'c$HOME`, comment: `Ana O'Brien!x` });
@@ -100,7 +106,7 @@ describe('bloque para pegar', () => {
   });
 
   it('la simulación pegada no cambia nada', () => {
-    writeFileSync(estado, JSON.stringify({ version: '8.2.4', users: {}, groups: {}, pools: {}, roles: ['Alumno'], acl: [], storages: ['local-lvm'], vms: {} }));
+    writeFileSync(estado, JSON.stringify({ version: '8.2.4', users: {}, groups: {}, pools: {}, roles: ['Alumno', 'PVESDNUser', 'PVEVMAdmin', 'PVEDatastoreUser'], acl: [], storages: ['local-lvm', 'local'], bridges: ['vmbr1'], vms: {} }));
     const salida = pegar(paraPegar(scripts.creacion, { args: ['--dry-run'], autoborrar: true }));
     expect(salida).toContain('Modo simulación');
     expect(JSON.parse(readFileSync(estado, 'utf8')).users).toEqual({});
@@ -108,7 +114,7 @@ describe('bloque para pegar', () => {
   });
 
   it('un fallo dentro del script no cierra la terminal', () => {
-    writeFileSync(estado, JSON.stringify({ version: '8.2.4', users: {}, groups: {}, pools: {}, roles: [], acl: [], storages: ['local-lvm'], vms: {} }));
+    writeFileSync(estado, JSON.stringify({ version: '8.2.4', users: {}, groups: {}, pools: {}, roles: [], acl: [], storages: ['local-lvm', 'local'], bridges: ['vmbr1'], vms: {} }));
     const salida = pegar(paraPegar(scripts.creacion, { autoborrar: true }) + 'echo SIGUE_VIVA\n');
     expect(salida).toContain("El rol 'Alumno' no existe");
     expect(salida).toContain('SIGUE_VIVA');

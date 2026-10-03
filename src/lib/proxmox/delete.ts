@@ -141,6 +141,32 @@ for ((i = 0; i < \${#OBJETIVOS[@]}; i += 2)); do
   fi
 done
 
+# En modo clase, quita los permisos de la clase (profesores, bridge, ISOs, plantillas)
+# para no dejar entradas huérfanas.
+if [[ "$MODO" == clase && -n "$CLASE" ]]; then
+  titulo "Permisos de la clase"
+  ACLS=$(pveum acl list --output-format json | python3 -c '
+import json, sys
+clase = sys.argv[1]
+for a in json.load(sys.stdin):
+    ruta, tipo, quien = a.get("path", ""), a.get("type"), a.get("ugid")
+    if tipo in ("user", "group") and (ruta == "/pool/" + clase or ruta.startswith("/pool/" + clase + "/") or (tipo == "group" and quien == clase)):
+        print(ruta, tipo, quien, a.get("roleid"))
+' "$CLASE")
+  if [[ -z "$ACLS" ]]; then
+    info "No quedan permisos de la clase"
+  fi
+  while read -r ruta tipo quien rol; do
+    [[ -n "$ruta" ]] || continue
+    if [[ "$tipo" == group ]]; then
+      run pveum acl delete "$ruta" --groups "$quien" --roles "$rol" || aviso "no se pudo quitar $rol de $quien en $ruta"
+    else
+      run pveum acl delete "$ruta" --users "$quien" --roles "$rol" || aviso "no se pudo quitar $rol de $quien en $ruta"
+    fi
+    ok "quitado $rol de $quien en $ruta"
+  done <<<"$ACLS"
+fi
+
 # En modo clase, borra también el pool padre y el grupo si se han quedado vacíos.
 if [[ "$MODO" == clase && -n "$CLASE" ]] && (( ! DRY_RUN )); then
   cargar_estado

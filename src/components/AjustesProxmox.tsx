@@ -44,12 +44,24 @@ export default function AjustesProxmox() {
           <small><code>pve</code> son los usuarios propios de Proxmox.</small>
         </div>
         <div class="campo">
-          <label for="s-storage">Storage</label>
+          <label for="s-storage">Storage de discos</label>
           <input id="s-storage" type="text" value={a.storage} onInput={(e) => set({ storage: e.currentTarget.value.trim() })} />
+          <small>Donde se crean los discos de las VMs. Se añade al pool de cada alumno.</small>
         </div>
         <div class="campo">
-          <label for="s-rolstorage">Rol de la clase sobre el storage</label>
-          <input id="s-rolstorage" type="text" placeholder="Vacío: no se asigna" value={a.rolStorage} onInput={(e) => set({ rolStorage: e.currentTarget.value.trim() })} />
+          <label for="s-isos">Storage de ISOs</label>
+          <input id="s-isos" type="text" value={a.storageIsos} onInput={(e) => set({ storageIsos: e.currentTarget.value.trim() })} />
+          <small>Los alumnos pueden usarlas; los profesores, subirlas.</small>
+        </div>
+        <div class="campo">
+          <label for="s-plantillas">Pool de plantillas</label>
+          <input id="s-plantillas" type="text" placeholder="Vacío: no se usa" value={a.poolPlantillas} onInput={(e) => set({ poolPlantillas: e.currentTarget.value.trim() })} />
+          <small>Plantillas que los alumnos pueden clonar en su pool.</small>
+        </div>
+        <div class="campo">
+          <label for="s-rolesprof">Roles del profesor sobre la clase</label>
+          <input id="s-rolesprof" type="text" value={a.rolesProfesor} onInput={(e) => set({ rolesProfesor: e.currentTarget.value.replace(/\s+/g, '') })} />
+          <small>Separados por comas. Ven y gestionan las máquinas de todos sus alumnos.</small>
         </div>
         <div class="campo">
           <label for="s-cuota">Espacio por alumno (GB)</label>
@@ -64,7 +76,7 @@ export default function AjustesProxmox() {
         </div>
       </div>
       <div class="acciones">
-        <button type="button" class="btn btn-texto" onClick={() => set(AJUSTES_POR_DEFECTO)}>Restablecer valores</button>
+        <button type="button" class="btn btn-texto" onClick={() => set({ ...AJUSTES_POR_DEFECTO, bridges: a.bridges })}>Restablecer valores</button>
         <div class="acciones-grupo" style="align-items:center">
           <span role="status" style="font-weight:700;color:var(--verde-texto)">
             {estado === 'guardado' && 'Ajustes guardados'}

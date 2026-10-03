@@ -4,8 +4,16 @@ import { CENTRO } from './centro';
 export interface Ajustes {
   realm: string;
   rol: string;
+  /** Storage de los discos de las VMs (se añade a cada pool). */
   storage: string;
-  rolStorage: string;
+  /** Storage de las ISOs: los alumnos las usan y los profesores las suben. */
+  storageIsos: string;
+  /** Pool común de plantillas para clonar (vacío: no se usa). */
+  poolPlantillas: string;
+  /** Roles de los profesores sobre el pool de la clase. */
+  rolesProfesor: string;
+  /** Bridge de cada clase («2asir» → «vmbr2asir»), recordado al generar. */
+  bridges: Record<string, string>;
   cuotaGB: number;
   estiloPassword: EstiloPassword;
   urlProxmox: string;
@@ -15,8 +23,11 @@ export interface Ajustes {
 export const AJUSTES_POR_DEFECTO: Ajustes = {
   realm: 'pve',
   rol: 'Alumno',
-  storage: 'local-lvm',
-  rolStorage: '',
+  storage: 'ssd-vms',
+  storageIsos: 'isos-hdd',
+  poolPlantillas: '',
+  rolesProfesor: 'PVEVMAdmin,PVEPoolUser,PVEDatastoreUser',
+  bridges: {},
   cuotaGB: 50,
   estiloPassword: 'legible',
   urlProxmox: '',
@@ -29,7 +40,12 @@ const CLAVE = 'utilidades-prieto:proxmox:ajustes';
 export function leerAjustes(): Ajustes {
   try {
     const guardado = localStorage.getItem(CLAVE);
-    return guardado ? { ...AJUSTES_POR_DEFECTO, ...JSON.parse(guardado) } : { ...AJUSTES_POR_DEFECTO };
+    if (!guardado) return { ...AJUSTES_POR_DEFECTO };
+    const leido = JSON.parse(guardado);
+    // Solo se conservan las claves actuales (las de versiones anteriores se descartan).
+    const a = { ...AJUSTES_POR_DEFECTO };
+    for (const k of Object.keys(a) as (keyof Ajustes)[]) if (k in leido) (a as Record<string, unknown>)[k] = leido[k];
+    return a;
   } catch {
     return { ...AJUSTES_POR_DEFECTO };
   }
@@ -42,6 +58,14 @@ export function guardarAjustes(a: Ajustes): boolean {
   } catch {
     return false;
   }
+}
+
+/** Recuerda el bridge de una clase para proponerlo la próxima vez. */
+export function recordarBridge(clase: string, bridge: string) {
+  if (!clase || !bridge) return;
+  const a = leerAjustes();
+  if (a.bridges[clase] === bridge) return;
+  guardarAjustes({ ...a, bridges: { ...a.bridges, [clase]: bridge } });
 }
 
 export function descargar(nombre: string, contenido: string, tipo = 'text/plain') {

@@ -18,7 +18,7 @@ export const SECCIONES: Seccion[] = [
       { href: '/proxmox/crear/', nombre: 'Crear usuarios', icono: 'usuarioMas', descripcion: 'Desde un TXT con la lista de la clase o de uno en uno.' },
       { href: '/proxmox/borrar/', nombre: 'Borrar usuarios', icono: 'papelera', descripcion: 'Una clase entera, una lista o un solo usuario, con sus VMs.' },
       { href: '/proxmox/auditoria/', nombre: 'Uso de disco', icono: 'medidor', descripcion: 'Comprueba quién se ha pasado de la cuota de su pool.' },
-      { href: '/proxmox/ajustes/', nombre: 'Ajustes', icono: 'ajustes', descripcion: 'Rol, storage, cuota y URL del Proxmox por defecto.' },
+      { href: '/proxmox/ajustes/', nombre: 'Ajustes', icono: 'ajustes', descripcion: 'Storages, plantillas, roles, cuota y URL del Proxmox por defecto.' },
     ],
   },
   {

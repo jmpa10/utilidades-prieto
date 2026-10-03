@@ -9,7 +9,11 @@ const resumen = resumenTxt({
   realm: 'pve',
   rol: 'Alumno',
   cuotaGB: 50,
-  storage: 'local-lvm',
+  storage: 'ssd-vms',
+  storageIsos: 'isos-hdd',
+  poolPlantillas: '',
+  bridge: 'vmbr2asir',
+  profesores: ['profe1@pve', 'profe2@pve'],
   urlProxmox: 'https://pve.centro.es:8006',
   centro: 'IES Gregorio Prieto',
   usuarios: [
@@ -24,6 +28,8 @@ describe('resumen TXT', () => {
   it('incluye cabecera, instrucciones y una línea por usuario', () => {
     expect(resumen).toMatch(/^# Identificador: +2asir$/m);
     expect(resumen).toContain('Borrar usuarios → «Desde el TXT»');
+    expect(resumen).toMatch(/^# Bridge: +vmbr2asir$/m);
+    expect(resumen).toMatch(/^# Profesores: +profe1@pve, profe2@pve$/m);
     expect(resumen).toMatch(/^ {2}mjfuente-2asir@pve\s{2,}2asir\/mjfuente-2asir\s{2,}Oso-Azul-222\s{2,}de la Fuente Ruiz, María José$/m);
   });
 

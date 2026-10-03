@@ -341,3 +341,6 @@ img.marca-logo { width: 52px; height: auto; background: none; box-shadow: none; 
 .variante.activa { border-color: var(--verde); box-shadow: 0 3px 0 var(--verde-sombra); }
 .variante.peligro input { accent-color: var(--rojo); }
 .variante.peligro.activa { border-color: var(--rojo); box-shadow: 0 3px 0 var(--rojo-sombra); }
+.privilegios summary { cursor: pointer; font-weight: 800; margin-bottom: 16px; }
+.privilegios[open] { margin-bottom: 8px; }
+.aviso + .aviso { margin-top: -16px; }

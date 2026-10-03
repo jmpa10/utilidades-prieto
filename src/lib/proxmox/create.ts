@@ -16,10 +16,18 @@ export interface OpcionesCreacion {
   realm: string;
   rol: string;
   cuotaGB: number | null;
-  /** Storage que se añade como miembro de cada pool (opcional). */
+  /** Storage de discos que se añade como miembro de cada pool (opcional). */
   storage: string;
-  /** Rol que recibe el grupo de la clase sobre /storage/<storage> (opcional). */
-  rolStorage: string;
+  /** Storage de ISOs: la clase puede usarlas (Datastore.Audit) y los profesores subirlas. */
+  storageIsos: string;
+  /** Bridge Linux de la clase: solo su grupo puede conectar VMs a él (SDN.Use). */
+  bridge: string;
+  /** Pool común de plantillas que la clase puede clonar (PVETemplateUser). */
+  poolPlantillas: string;
+  /** Usuarios de Proxmox de los profesores de la clase («profe1@pve»). */
+  profesores: string[];
+  /** Roles de los profesores sobre el pool de la clase, separados por comas. */
+  rolesProfesor: string;
   usuarios: AltaUsuario[];
   fecha?: Date;
 }
@@ -35,7 +43,7 @@ export function scriptCreacion(o: OpcionesCreacion): string {
 # ──────────────────────────────────────────────────────────────
 #  Utilidades Prieto · Proxmox · Crear usuarios y pools
 #  Generado: ${fechaHora(o.fecha)}
-#  Clase: ${etiqueta} · ${n} usuario${n === 1 ? '' : 's'} · rol ${comentario(o.rol)}${o.cuotaGB ? ` · cuota ${o.cuotaGB} GB` : ''}
+#  Clase: ${etiqueta} · ${n} usuario${n === 1 ? '' : 's'} · rol ${comentario(o.rol)}${o.cuotaGB ? ` · cuota ${o.cuotaGB} GB` : ''}${o.clase && o.bridge ? `\n#  Red: ${comentario(o.bridge)}` : ''}${o.clase && o.profesores.length ? `\n#  Profesores: ${o.profesores.map(comentario).join(', ')}` : ''}
 #
 #  Uso:  bash crear-${o.clase || 'usuarios'}.sh [--dry-run]
 #
@@ -50,7 +58,11 @@ CLASE=${q(o.clase)}
 CLASE_NOMBRE=${q(o.claseNombre || o.clase)}
 CUOTA_GB=${q(o.cuotaGB ? String(o.cuotaGB) : '')}
 STORAGE=${q(o.storage)}
-ROL_STORAGE=${q(o.rolStorage)}
+STORAGE_ISOS=${q(o.clase ? o.storageIsos : '')}
+BRIDGE=${q(o.clase ? o.bridge : '')}
+PLANTILLAS=${q(o.clase ? o.poolPlantillas : '')}
+ROLES_PROFESOR=${q(o.rolesProfesor)}
+PROFESORES=(${o.clase ? o.profesores.map(q).join(' ') : ''})
 ${CABECERA_COMUN}
 comprobar_entorno
 
@@ -58,8 +70,20 @@ existe "$ROLES" "$ROL" || fallo "El rol '$ROL' no existe. Créalo antes en Centr
 if [[ -n "$CLASE" ]]; then
   version_minima 8 1 || fallo "Los pools anidados necesitan Proxmox VE 8.1 o superior."
 fi
-if [[ -n "$STORAGE" ]]; then
-  pvesh get "/storage/$STORAGE" >/dev/null 2>&1 || fallo "El storage '$STORAGE' no existe."
+for st in "$STORAGE" "$STORAGE_ISOS"; do
+  [[ -z "$st" ]] || pvesh get "/storage/$st" >/dev/null 2>&1 || fallo "El storage '$st' no existe."
+done
+if [[ -n "$BRIDGE" ]]; then
+  existe "$ROLES" PVESDNUser || fallo "Falta el rol PVESDNUser: dar permiso sobre el bridge necesita Proxmox VE 8 o superior."
+fi
+if [[ -n "$PLANTILLAS" ]]; then
+  existe "$ROLES" PVETemplateUser || fallo "Falta el rol PVETemplateUser."
+fi
+if (( \${#PROFESORES[@]} )); then
+  IFS=, read -r -a roles_prof <<<"$ROLES_PROFESOR"
+  for r in "\${roles_prof[@]}"; do
+    existe "$ROLES" "$r" || fallo "El rol de profesor '$r' no existe."
+  done
 fi
 
 titulo "Creando usuarios para $CLASE_NOMBRE"
@@ -79,10 +103,48 @@ if [[ -n "$CLASE" ]]; then
     run pveum pool add "$CLASE" --comment "Clase $CLASE_NOMBRE"
     ok "Pool $CLASE creado"
   fi
-  if [[ -n "$STORAGE" && -n "$ROL_STORAGE" ]]; then
-    run pveum acl modify "/storage/$STORAGE" --groups "$CLASE" --roles "$ROL_STORAGE"
-    ok "Grupo $CLASE con rol $ROL_STORAGE sobre /storage/$STORAGE"
+
+  # Red: solo el grupo de la clase puede conectar VMs a su bridge.
+  if [[ -n "$BRIDGE" ]]; then
+    nodo=$(hostname)
+    pvesh get "/nodes/$nodo/network/$BRIDGE" >/dev/null 2>&1 \
+      || aviso "El bridge $BRIDGE no aparece en este nodo ($nodo). Revisa el nombre o créalo en todos los nodos."
+    run pveum acl modify "/sdn/zones/localnetwork/$BRIDGE" --groups "$CLASE" --roles PVESDNUser
+    ok "Grupo $CLASE puede usar el bridge $BRIDGE"
   fi
+
+  # ISOs: la clase puede montarlas, pero no subir ni borrar.
+  if [[ -n "$STORAGE_ISOS" ]]; then
+    if ! existe "$ROLES" AlumnoISO; then
+      run pveum role add AlumnoISO --privs Datastore.Audit
+      ok "Rol AlumnoISO creado (solo lectura de ISOs)"
+    fi
+    run pveum acl modify "/storage/$STORAGE_ISOS" --groups "$CLASE" --roles AlumnoISO
+    ok "Grupo $CLASE puede usar las ISOs de $STORAGE_ISOS"
+  fi
+
+  # Plantillas: la clase puede clonarlas en su propio pool.
+  if [[ -n "$PLANTILLAS" ]]; then
+    if ! existe "$POOLS" "$PLANTILLAS"; then
+      run pveum pool add "$PLANTILLAS" --comment "Plantillas para clonar"
+      ok "Pool $PLANTILLAS creado"
+    fi
+    run pveum acl modify "/pool/$PLANTILLAS" --groups "$CLASE" --roles PVETemplateUser
+    ok "Grupo $CLASE puede clonar las plantillas de $PLANTILLAS"
+  fi
+
+  # Profesores: ven y gestionan todo el pool de la clase (se propaga a los alumnos).
+  for prof in \${PROFESORES[@]+"\${PROFESORES[@]}"}; do
+    if ! existe "$USERS" "$prof"; then
+      aviso "El profesor $prof no existe en Proxmox: se salta."
+      continue
+    fi
+    run pveum acl modify "/pool/$CLASE" --users "$prof" --roles "$ROLES_PROFESOR"
+    if [[ -n "$STORAGE_ISOS" ]]; then
+      run pveum acl modify "/storage/$STORAGE_ISOS" --users "$prof" --roles PVEDatastoreUser
+    fi
+    ok "Profesor $prof con acceso a la clase$([[ -n "$STORAGE_ISOS" ]] && echo " y a subir ISOs")"
+  done
 fi
 
 CREADOS=0; EXISTENTES=0; ERRORES=0

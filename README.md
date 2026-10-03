@@ -8,14 +8,17 @@ La web es **estática**: todo se calcula en el navegador y no se envía ni se gu
 
 ## Qué hace el módulo de Proxmox
 
-Para la clase «2º ASIR» y el alumno «Pérez García, Juan»:
+Cada clase es un pool, y dentro cada alumno tiene su propio pool, donde solo él ve sus máquinas. Para la clase «2º ASIR» (bridge `vmbr2asir`) y el alumno «Pérez García, Juan»:
 
-| Elemento | Nombre | Notas |
+| Elemento | Nombre | Permisos |
 |---|---|---|
-| Grupo | `2asir` | Todos los alumnos de la clase |
-| Pool de la clase | `2asir` | Contiene los pools de los alumnos (pools anidados, PVE ≥ 8.1) |
-| Pool del alumno | `2asir/jperez-2asir` | Comentario `quota=50G; Juan Pérez García` |
-| Usuario | `jperez-2asir@pve` | Contraseña aleatoria y rol `Alumno` sobre su pool |
+| Pool de la clase | `2asir` | Los profesores de la clase (`PVEVMAdmin`, `PVEPoolUser`, `PVEDatastoreUser`), que se propaga a los pools de los alumnos |
+| Pool del alumno | `2asir/jperez-2asir` | Comentario `quota=50G; Juan Pérez García`. Incluye el storage de discos (`ssd-vms`) |
+| Usuario | `jperez-2asir@pve` | Contraseña aleatoria y rol `Alumno` **solo sobre su pool** |
+| Grupo de la clase | `2asir` | `PVESDNUser` sobre su bridge, `AlumnoISO` (solo lectura) sobre `isos-hdd` y `PVETemplateUser` sobre el pool de plantillas |
+| Profesores | `profe1@pve`… | Además, `PVEDatastoreUser` sobre `isos-hdd` para subir ISOs |
+
+Antes de la primera clase, pega una vez el bloque **Preparar Proxmox** (página de resumen de Proxmox). Crea el rol `Alumno` (crear, configurar, encender, parar y borrar máquinas en su pool) y `AlumnoISO`.
 
 - **Crear** (`/proxmox/crear/`): desde un TXT `Apellidos, Nombre` o de uno en uno (también vale para profesores, sin clase). Al generar el script de una clase se descarga un **resumen .txt** con los usuarios, pools y contraseñas creados. También puedes descargar las credenciales en CSV o imprimir papeletas.
 - **Borrar** (`/proxmox/borrar/`): una clase entera (la busca en el servidor), desde el resumen .txt (respeta los usuarios aunque se editaran a mano) o desde la lista original, o un usuario suelto. Para y destruye las VMs/CTs del pool.
@@ -26,13 +29,13 @@ Cada script se puede usar de dos formas:
 - **Pegar en la terminal** (por defecto): se copia un bloque y se pega en la Shell del nodo (web de Proxmox → nodo → *Shell*, o SSH como root). El bloque vuelca el script en un fichero temporal, lo ejecuta en un proceso aparte (un error no cierra tu sesión) y lo borra. Desactiva la expansión de `!` y no deja las contraseñas en el historial. Primero se pega la versión «Simular» y después la real.
 - **Fichero .sh**: se descarga, se copia al nodo y se ejecuta con `bash fichero.sh [--dry-run]`.
 
-Todos admiten `--dry-run` y se pueden repetir sin duplicar nada. El rol `Alumno` debe existir antes: el script solo lo asigna.
+Todos admiten `--dry-run` y se pueden repetir sin duplicar nada: si la clase o sus pools ya existen, se reutilizan. Al borrar una clase entera también se quitan sus permisos.
 
 ## Reutilizarlo en tu centro
 
 1. Haz un fork de [jmpa10/utilidades-prieto](https://github.com/jmpa10/utilidades-prieto).
 2. Cambia los datos de [`src/lib/centro.ts`](src/lib/centro.ts) (nombre del centro, departamento, logo, autor y repositorio) y pon tu logo en `public/img/`.
-3. Despliégalo como se explica abajo. Los valores de Proxmox (rol, realm, storage, cuota, URL) se ajustan desde la página de Ajustes de la propia web.
+3. Despliégalo como se explica abajo. Los valores de Proxmox (rol, realm, storages de discos e ISOs, pool de plantillas, roles de profesor, cuota, URL) se ajustan desde la página de Ajustes de la propia web.
 
 Se agradecen mejoras y nuevas utilidades mediante *issues* o *pull requests*.
 
