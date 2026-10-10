@@ -76,7 +76,7 @@ export default function BorrarUsuarios() {
           <p>
             {modo === 'clase' && 'El script busca en el momento todos los pools y usuarios de la clase, así que no necesitas la lista.'}
             {modo === 'lista' && 'Carga el resumen .txt que descargaste al crear la clase. También vale la lista original de alumnos: se calculan los mismos usuarios.'}
-            {modo === 'usuario' && 'Escribe el usuario tal como aparece en Proxmox, por ejemplo jperez-2asir.'}
+            {modo === 'usuario' && 'Escribe el usuario tal como aparece en Proxmox, por ejemplo jperez-asir2.'}
           </p>
         </div>
         <div class="campos">
@@ -88,7 +88,7 @@ export default function BorrarUsuarios() {
           {modo === 'usuario' && (
             <div class="campo">
               <label for="b-usuario">Usuario</label>
-              <input id="b-usuario" type="text" placeholder="jperez-2asir" value={usuario} aria-invalid={!!errorUsuario} onInput={(e) => setUsuario(e.currentTarget.value)} />
+              <input id="b-usuario" type="text" placeholder="jperez-asir2" value={usuario} aria-invalid={!!errorUsuario} onInput={(e) => setUsuario(e.currentTarget.value)} />
               {errorUsuario ? <small class="error">{errorUsuario}</small> : bases[0] ? <small>Pool <code>{poolDe(bases[0], clase)}</code></small> : <small>Sin la clase, se busca un pool con su mismo nombre.</small>}
             </div>
           )}

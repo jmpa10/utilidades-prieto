@@ -8,21 +8,21 @@ La web es **estática**: todo se calcula en el navegador y no se envía ni se gu
 
 ## Qué hace el módulo de Proxmox
 
-Cada clase es un pool, y dentro cada alumno tiene su propio pool, donde solo él ve sus máquinas. Para la clase «2º ASIR» (bridge `vmbr2asir`) y el alumno «Pérez García, Juan»:
+Cada clase es un pool, y dentro cada alumno tiene su propio pool, donde solo él ve sus máquinas. Para la clase «2º ASIR» (bridge `vmbrasir2`) y el alumno «Pérez García, Juan»:
 
 | Elemento | Nombre | Permisos |
 |---|---|---|
-| Pool de la clase | `2asir` | Los profesores de la clase (`PVEVMAdmin`, `PVEPoolUser`, `PVEDatastoreUser`), que se propaga a los pools de los alumnos |
-| Pool del alumno | `2asir/jperez-2asir` | Comentario `quota=50G; Juan Pérez García`. Incluye el storage de discos (`ssd-vms`) |
-| Usuario | `jperez-2asir@pve` | Contraseña aleatoria y rol `Alumno` **solo sobre su pool** |
-| Grupo de la clase | `2asir` | `PVESDNUser` sobre su bridge, `AlumnoISO` (solo lectura) sobre `isos-hdd` y `PVETemplateUser` sobre el pool de plantillas |
+| Pool de la clase | `asir2` | Los profesores de la clase (`PVEVMAdmin`, `PVEPoolUser`, `PVEDatastoreUser`), que se propaga a los pools de los alumnos |
+| Pool del alumno | `asir2/jperez-asir2` | Comentario `quota=50G; Juan Pérez García`. Incluye el storage de discos (`ssd-vms`) |
+| Usuario | `jperez-asir2@pve` | Contraseña aleatoria y rol `Alumno` **solo sobre su pool** |
+| Grupo de la clase | `asir2` | `PVESDNUser` sobre su bridge, `AlumnoISO` (solo lectura) sobre `isos-hdd` y `PVETemplateUser` sobre el pool de plantillas |
 | Profesores | `profe1@pve`… | Además, `PVEDatastoreUser` sobre `isos-hdd` para subir ISOs |
 
-Antes de la primera clase, pega una vez el bloque **Preparar Proxmox** (página de resumen de Proxmox). Crea el rol `Alumno` (crear, configurar, encender, parar y borrar máquinas en su pool) y `AlumnoISO`.
+Antes de la primera clase, sigue **Primeros pasos** (`/proxmox/guia/`): pega una vez el bloque «Preparar Proxmox», revisa los ajustes y crea la clase. Ese bloque crea el rol `Alumno` (crear, configurar, encender, parar y borrar máquinas en su pool) y `AlumnoISO`.
 
 - **Crear** (`/proxmox/crear/`): desde un TXT `Apellidos, Nombre` o de uno en uno (también vale para profesores, sin clase). Al generar el script de una clase se descarga un **resumen .txt** con los usuarios, pools y contraseñas creados. También puedes descargar las credenciales en CSV o imprimir papeletas.
 - **Borrar** (`/proxmox/borrar/`): una clase entera (la busca en el servidor), desde el resumen .txt (respeta los usuarios aunque se editaran a mano) o desde la lista original, o un usuario suelto. Para y destruye las VMs/CTs del pool.
-- **Mover alumno** (`/proxmox/mover/`): pasa a un alumno a otra clase. Proxmox no permite renombrar usuarios, así que recibe uno nuevo (`jperez-2dam`) con contraseña nueva y se lleva sus máquinas.
+- **Mover alumno** (`/proxmox/mover/`): pasa a un alumno a otra clase. Proxmox no permite renombrar usuarios, así que recibe uno nuevo (`jperez-dam2`) con contraseña nueva y se lleva sus máquinas.
 - **Profesores** (`/proxmox/profesores/`): añade o quita profesores de una clase ya creada.
 
 **En el aula** (toda la clase, algunos alumnos o las máquinas que coincidan con un nombre o una etiqueta):

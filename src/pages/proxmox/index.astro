@@ -1,74 +1,55 @@
 ---
 import Portal from '../../layouts/Portal.astro';
 import Icono from '../../components/Icono';
-import PrepararProxmox from '../../components/PrepararProxmox';
 import { SECCIONES, porGrupos } from '../../lib/navegacion';
 const proxmox = SECCIONES.find((s) => s.id === 'proxmox')!;
 ---
 <Portal titulo="Proxmox">
-  <header class="cabecera-pagina">
-    <a class="miga" href="/">Inicio</a>
-    <h1>Proxmox</h1>
-    <p>Cada alumno recibe un usuario y un pool de recursos propio donde montar sus máquinas, agrupados por clase.</p>
+  <header class="cabecera-app">
+    <div>
+      <h1>¿Qué quieres hacer?</h1>
+      <p>Cada utilidad te prepara un bloque para pegar en la terminal del servidor.</p>
+    </div>
+    <nav class="acciones-app" aria-label="Configuración">
+      <a class="btn btn-pequeno" href="/proxmox/guia/"><Icono nombre="info" tam={16} />Primeros pasos</a>
+      <a class="btn btn-pequeno" href="/proxmox/ajustes/"><Icono nombre="ajustes" tam={16} />Ajustes</a>
+    </nav>
   </header>
 
-  {porGrupos(proxmox.enlaces).map(([grupo, enlaces]) => (
-    <section class="grupo-accesos" aria-label={grupo}>
-      <h2>{grupo}</h2>
-      <div class="accesos">
-        {enlaces.map((e) => (
-          <a class="utilidad" href={e.href}>
-            <span class="utilidad-icono"><Icono nombre={e.icono} tam={26} /></span>
-            <h3>{e.nombre}</h3>
-            <p>{e.descripcion}</p>
-          </a>
-        ))}
-      </div>
-    </section>
-  ))}
-
-  <section class="panel">
-    <div class="panel-cabecera">
-      <h2>Cómo queda organizado</h2>
-      <p>Para la clase 2º ASIR, con su bridge <code>vmbr2asir</code>, y el alumno Juan Pérez García:</p>
-    </div>
-    <div class="tabla-envoltorio">
-      <table>
-        <tbody>
-          <tr><th scope="row">Pool de la clase</th><td class="mono">2asir</td><td>Contiene los pools de los alumnos. Los profesores de la clase lo ven entero.</td></tr>
-          <tr><th scope="row">Pool del alumno</th><td class="mono">2asir/jperez-2asir</td><td>Su espacio: solo él ve y gestiona las máquinas que hay dentro. Guarda la cuota en su comentario.</td></tr>
-          <tr><th scope="row">Usuario</th><td class="mono">jperez-2asir@pve</td><td>Con el rol «Alumno» solo sobre su pool.</td></tr>
-          <tr><th scope="row">Grupo de la clase</th><td class="mono">2asir</td><td>Permisos comunes: usar su bridge, montar ISOs y clonar plantillas.</td></tr>
-          <tr><th scope="row">Red</th><td class="mono">vmbr2asir</td><td>Solo el grupo 2asir puede conectar máquinas a este bridge.</td></tr>
-          <tr><th scope="row">ISOs</th><td class="mono">isos-hdd</td><td>Los alumnos las montan; los profesores las suben.</td></tr>
-          <tr><th scope="row">Discos</th><td class="mono">ssd-vms</td><td>Está dentro de cada pool de alumno, que crea ahí sus discos.</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="panel" id="preparar">
-    <div class="panel-cabecera">
-      <h2>Preparar Proxmox (una sola vez)</h2>
-      <p>Crea el rol «Alumno», que permite crear, configurar, encender, parar y borrar máquinas solo dentro de su pool, y el rol de solo lectura de ISOs.</p>
-    </div>
-    <PrepararProxmox client:load />
-  </section>
-
-  <div class="aviso">
+  <div class="aviso-guia" id="aviso-guia" hidden>
     <Icono nombre="info" />
-    <span>
-      <strong>Para que todo funcione, recuérdaselo a los alumnos:</strong> al crear una máquina deben elegir su pool en el campo
-      «Resource Pool». Si no, Proxmox les dirá que no tienen permiso.
-    </span>
+    <span>¿Es la primera vez? Antes de crear la primera clase hay que preparar Proxmox una vez.</span>
+    <a class="btn btn-pequeno btn-primario" href="/proxmox/guia/">Ver primeros pasos</a>
+    <button type="button" class="icono-boton" id="cerrar-guia" aria-label="No volver a mostrar">✕</button>
   </div>
 
-  <div class="aviso">
-    <Icono nombre="alerta" />
-    <span>
-      <strong>Lo que Proxmox no separa:</strong> las máquinas de una misma clase comparten bridge, así que se ven entre sí en la red.
-      Y con LVM-thin no puede limitar el espacio de cada pool: la cuota queda anotada y en{' '}
-      <a href="/proxmox/auditoria/">Uso de disco</a> tienes un script que avisa de quién se pasa.
-    </span>
+  <div class="grupos-herramientas">
+    {porGrupos(proxmox.enlaces).map(([grupo, enlaces]) => (
+      <section class="grupo-herramientas" aria-labelledby={`g-${grupo}`}>
+        <h2 id={`g-${grupo}`}>{grupo}</h2>
+        <div class="herramientas">
+          {enlaces.map((e) => (
+            <a class="herramienta" href={e.href}>
+              <span class="herramienta-icono"><Icono nombre={e.icono} tam={22} /></span>
+              <span class="herramienta-texto"><strong>{e.nombre}</strong><small>{e.descripcion}</small></span>
+            </a>
+          ))}
+        </div>
+      </section>
+    ))}
   </div>
 </Portal>
+
+<script>
+  const CLAVE = 'utilidades-prieto:guia-cerrada';
+  const aviso = document.getElementById('aviso-guia')!;
+  try {
+    if (!localStorage.getItem(CLAVE)) aviso.hidden = false;
+  } catch {
+    aviso.hidden = false;
+  }
+  document.getElementById('cerrar-guia')!.addEventListener('click', () => {
+    aviso.hidden = true;
+    try { localStorage.setItem(CLAVE, '1'); } catch {}
+  });
+</script>

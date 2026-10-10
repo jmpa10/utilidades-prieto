@@ -12,7 +12,7 @@ export interface Objetivo {
   etiqueta: string;
 }
 
-/** Pools a los que apunta: «2asir/» (toda la clase) o los pools de cada alumno. */
+/** Pools a los que apunta: «asir2/» (toda la clase) o los pools de cada alumno. */
 export function poolsObjetivo(o: Objetivo): string[] {
   return o.bases.length ? o.bases.map((b) => poolDe(b, o.clase)) : [`${o.clase}/`];
 }

@@ -4,7 +4,7 @@ import { leerResumen, resumenTxt } from '../src/lib/proxmox/resumen';
 
 const personas = parsearTexto('de la Fuente Ruiz, María José\nPérez García, Juan');
 const resumen = resumenTxt({
-  clase: '2asir',
+  clase: 'asir2',
   claseNombre: '2º ASIR',
   realm: 'pve',
   rol: 'Alumno',
@@ -12,31 +12,31 @@ const resumen = resumenTxt({
   storage: 'ssd-vms',
   storageIsos: 'isos-hdd',
   poolPlantillas: '',
-  bridge: 'vmbr2asir',
+  bridge: 'vmbrasir2',
   profesores: ['profe1@pve', 'profe2@pve'],
   urlProxmox: 'https://pve.centro.es:8006',
   centro: 'IES Gregorio Prieto',
   usuarios: [
     // Usuario editado a mano: no coincide con el que se calcularía del nombre.
-    { userid: 'mjfuente-2asir@pve', pool: '2asir/mjfuente-2asir', password: 'Oso-Azul-222', nombre: formatoLista(personas[0]) },
-    { userid: 'jperez-2asir@pve', pool: '2asir/jperez-2asir', password: 'Lince-Verde-472', nombre: formatoLista(personas[1]) },
+    { userid: 'mjfuente-asir2@pve', pool: 'asir2/mjfuente-asir2', password: 'Oso-Azul-222', nombre: formatoLista(personas[0]) },
+    { userid: 'jperez-asir2@pve', pool: 'asir2/jperez-asir2', password: 'Lince-Verde-472', nombre: formatoLista(personas[1]) },
   ],
   fecha: new Date('2026-10-02T10:00:00'),
 });
 
 describe('resumen TXT', () => {
   it('incluye cabecera, instrucciones y una línea por usuario', () => {
-    expect(resumen).toMatch(/^# Identificador: +2asir$/m);
+    expect(resumen).toMatch(/^# Identificador: +asir2$/m);
     expect(resumen).toContain('Borrar usuarios → «Desde el TXT»');
-    expect(resumen).toMatch(/^# Bridge: +vmbr2asir$/m);
+    expect(resumen).toMatch(/^# Bridge: +vmbrasir2$/m);
     expect(resumen).toMatch(/^# Profesores: +profe1@pve, profe2@pve$/m);
-    expect(resumen).toMatch(/^ {2}mjfuente-2asir@pve\s{2,}2asir\/mjfuente-2asir\s{2,}Oso-Azul-222\s{2,}de la Fuente Ruiz, María José$/m);
+    expect(resumen).toMatch(/^ {2}mjfuente-asir2@pve\s{2,}asir2\/mjfuente-asir2\s{2,}Oso-Azul-222\s{2,}de la Fuente Ruiz, María José$/m);
   });
 
   it('se vuelve a leer con los usuarios exactos y la clase', () => {
     const leido = leerResumen(resumen)!;
-    expect(leido.clase).toBe('2asir');
-    expect(leido.usuarios.map((u) => u.userid)).toEqual(['mjfuente-2asir@pve', 'jperez-2asir@pve']);
+    expect(leido.clase).toBe('asir2');
+    expect(leido.usuarios.map((u) => u.userid)).toEqual(['mjfuente-asir2@pve', 'jperez-asir2@pve']);
     expect(leido.usuarios[0].password).toBe('Oso-Azul-222');
   });
 

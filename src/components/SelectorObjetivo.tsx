@@ -15,7 +15,7 @@ interface Props {
   ayudaFiltro?: string;
 }
 
-/** «jperez, mfuente-2asir@pve» o un resumen TXT → bases de usuario de esa clase. */
+/** «jperez, mfuente-asir2@pve» o un resumen TXT → bases de usuario de esa clase. */
 export function basesDesdeTexto(texto: string, clase: string): string[] {
   const resumen = leerResumen(texto);
   const ids = resumen ? resumen.usuarios.map((u) => u.userid) : texto.split(/[\s,;]+/).filter(Boolean);
@@ -76,7 +76,7 @@ export default function SelectorObjetivo({ realm, onChange, conFiltro = false, f
       {alcance === 'alumnos' && (
         <div class="campo" style="margin-top:18px">
           <label for="obj-alumnos">Alumnos</label>
-          <textarea id="obj-alumnos" rows={3} placeholder="jperez, mfuente-2asir" value={alumnos} onInput={(e) => setAlumnos(e.currentTarget.value)} spellcheck={false} style="min-height:90px" />
+          <textarea id="obj-alumnos" rows={3} placeholder="jperez, mfuente-asir2" value={alumnos} onInput={(e) => setAlumnos(e.currentTarget.value)} spellcheck={false} style="min-height:90px" />
           <small>
             Usuarios separados por comas o espacios, con o sin la clase.{' '}
             <label style="cursor:pointer;text-decoration:underline">
@@ -89,7 +89,7 @@ export default function SelectorObjetivo({ realm, onChange, conFiltro = false, f
         </div>
       )}
 
-      {conFiltro && (
+      {conFiltro && (filtroObligatorio ? (
         <div class="campos" style="margin-top:18px">
           <div class="campo">
             <label for="obj-filtro">Máquinas cuyo nombre contenga{filtroObligatorio ? '' : ' (opcional)'}</label>
@@ -102,7 +102,23 @@ export default function SelectorObjetivo({ realm, onChange, conFiltro = false, f
             <small>Las etiquetas (tags) que se ponen a las máquinas en Proxmox.</small>
           </div>
         </div>
-      )}
+      ) : (
+        <details class="mas-opciones" open={!!(filtro || etiqueta)}>
+          <summary>Solo algunas máquinas (por nombre o etiqueta)</summary>
+        <div class="campos" style="margin-top:18px">
+          <div class="campo">
+            <label for="obj-filtro">Máquinas cuyo nombre contenga{filtroObligatorio ? '' : ' (opcional)'}</label>
+            <input id="obj-filtro" type="text" placeholder="practica3" value={filtro} onInput={(e) => setFiltro(e.currentTarget.value)} />
+            <small>{ayudaFiltro ?? 'Vacío: todas las máquinas de sus pools.'}</small>
+          </div>
+          <div class="campo">
+            <label for="obj-etiqueta">O con la etiqueta (opcional)</label>
+            <input id="obj-etiqueta" type="text" placeholder="practica3" value={etiqueta} onInput={(e) => setEtiqueta(e.currentTarget.value)} />
+            <small>Las etiquetas (tags) que se ponen a las máquinas en Proxmox.</small>
+          </div>
+        </div>
+        </details>
+      ))}
       {sinFiltro && <p class="error" style="margin-top:10px;font-weight:700;color:var(--rojo);font-size:.875rem">Indica un nombre o una etiqueta: esta utilidad no se aplica a todas las máquinas.</p>}
     </div>
   );

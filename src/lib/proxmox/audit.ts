@@ -1,7 +1,7 @@
 import { fechaHora, q } from '../shell';
 
 export interface OpcionesAuditoria {
-  /** Clase a auditar («2asir»); vacío → todos los pools con «quota=» en el comentario. */
+  /** Clase a auditar («asir2»); vacío → todos los pools con «quota=» en el comentario. */
   clase: string;
   /** Porcentaje a partir del cual se avisa. */
   umbralAviso: number;

@@ -1,7 +1,7 @@
 ---
 import '../styles/global.css';
 import Icono from '../components/Icono';
-import { SECCIONES, porGrupos } from '../lib/navegacion';
+import { SECCIONES } from '../lib/navegacion';
 import { CENTRO } from '../lib/centro';
 
 interface Props {
@@ -28,62 +28,42 @@ const ruta = Astro.url.pathname.replace(/\/?$/, '/');
     </script>
   </head>
   <body>
-    <div class="portal">
-      <aside class="lateral">
-        <a class="marca" href="/">
-          <img class="marca-logo" src={CENTRO.logo} alt={`Logo del ${CENTRO.nombre}`} width="52" height="53" />
-          <span class="marca-texto"><strong>Utilidades Prieto</strong><span>{CENTRO.departamento}</span><span>{CENTRO.nombre}</span></span>
+    <header class="cabecera">
+      <div class="cabecera-interior">
+        <a class="marca" href="/" aria-label="Utilidades Prieto, inicio">
+          <img class="marca-logo" src={CENTRO.logo} alt="" width="40" height="41" />
+          <span class="marca-texto"><strong>Utilidades Prieto</strong><span>{CENTRO.departamento}</span></span>
         </a>
-        <nav aria-label="Utilidades">
-          <div class="nav-grupo">
-            <a class="nav-enlace solo" href="/" aria-current={ruta === '/' ? 'page' : undefined}><Icono nombre="casa" tam={18} />Inicio</a>
-          </div>
+        <nav class="apps" aria-label="Aplicaciones">
           {SECCIONES.map((s) => (
-            <div class="nav-grupo">
-              <span class="nav-grupo-titulo"><Icono nombre={s.icono} tam={20} />{s.nombre}</span>
-              {s.pronto ? (
-                <a class="nav-enlace" href={s.enlaces[0].href} aria-current={ruta === s.enlaces[0].href ? 'page' : undefined}>
-                  {s.enlaces[0].nombre}
-                </a>
-              ) : (
-                <>
-                  <a class="nav-enlace" href={`/${s.id}/`} aria-current={ruta === `/${s.id}/` ? 'page' : undefined}>Resumen</a>
-                  {porGrupos(s.enlaces).map(([grupo, enlaces]) => (
-                    <>
-                      {grupo && <span class="nav-subgrupo">{grupo}</span>}
-                      {enlaces.map((e) => (
-                        <a class="nav-enlace" href={e.href} aria-current={ruta === e.href ? 'page' : undefined}>{e.nombre}</a>
-                      ))}
-                    </>
-                  ))}
-                </>
-              )}
-            </div>
+            <a class="app" href={`/${s.id}/`} aria-current={ruta.startsWith(`/${s.id}/`) ? 'page' : undefined}>
+              <Icono nombre={s.icono} tam={18} />{s.nombre}{s.pronto && <span class="app-pronto">pronto</span>}
+            </a>
           ))}
         </nav>
-        <div class="lateral-pie">
-          <a class="enlace-github" href={CENTRO.repositorio} target="_blank" rel="noopener">
-            <Icono nombre="github" tam={18} /><span>Código abierto en GitHub</span>
+        <div class="cabecera-acciones">
+          <a class="icono-boton" href={CENTRO.repositorio} target="_blank" rel="noopener" aria-label="Código en GitHub" title="Código en GitHub">
+            <Icono nombre="github" tam={18} />
           </a>
-          <button class="boton-tema" type="button" id="boton-tema" aria-label="Cambiar entre tema claro y oscuro">
+          <button class="icono-boton" type="button" id="boton-tema" aria-label="Cambiar entre tema claro y oscuro" title="Tema claro u oscuro">
             <span data-icono="luna"><Icono nombre="luna" tam={18} /></span>
             <span data-icono="sol" hidden><Icono nombre="sol" tam={18} /></span>
           </button>
         </div>
-      </aside>
-      <main class="principal">
-        <div class="contenido">
-          <slot />
-          <footer class="pie">
-            <span>{CENTRO.departamento} del {CENTRO.nombre}. Todo se genera en tu navegador: no se envían ni se guardan datos.</span>
-            <span>
-              <a href={CENTRO.repositorio} target="_blank" rel="noopener">Código fuente</a> con licencia MIT, por{' '}
-              <a href={CENTRO.autor.github} target="_blank" rel="noopener">{CENTRO.autor.nombre}</a>
-            </span>
-          </footer>
-        </div>
-      </main>
-    </div>
+      </div>
+    </header>
+    <main class="principal">
+      <div class="contenido">
+        <slot />
+      </div>
+    </main>
+    <footer class="pie">
+      <span>{CENTRO.departamento} · {CENTRO.nombre}. Todo se genera en tu navegador: no se envían ni se guardan datos.</span>
+      <span>
+        <a href={CENTRO.repositorio} target="_blank" rel="noopener">Código abierto</a> con licencia MIT, por{' '}
+        <a href={CENTRO.autor.github} target="_blank" rel="noopener">{CENTRO.autor.nombre}</a>
+      </span>
+    </footer>
     <slot name="fuera" />
     <script>
       const raiz = document.documentElement;

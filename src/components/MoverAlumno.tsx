@@ -47,7 +47,7 @@ export default function MoverAlumno() {
           </div>
           <div class="campo">
             <label for="mv-usuario">Alumno</label>
-            <input id="mv-usuario" type="text" placeholder="jperez-2asir" value={usuario} onInput={(e) => setUsuario(e.currentTarget.value)} />
+            <input id="mv-usuario" type="text" placeholder="jperez-asir2" value={usuario} onInput={(e) => setUsuario(e.currentTarget.value)} />
             <small>{viejo ? <>Usuario actual <code>{viejo}</code></> : 'Su usuario de Proxmox.'}</small>
           </div>
           <div class="campo">

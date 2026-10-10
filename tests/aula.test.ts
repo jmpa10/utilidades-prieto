@@ -32,39 +32,39 @@ function ejecutar(script: string, args: string[] = []) {
   return { codigo: r.status, salida: r.stdout + r.stderr };
 }
 
-const usuario = (comment: string) => ({ groups: ['2asir'], comment, password: 'vieja' });
+const usuario = (comment: string) => ({ groups: ['asir2'], comment, password: 'vieja' });
 const ESCENARIO = () => ({
   version: '8.2.4',
   roles: ['Alumno', 'PVEVMAdmin', 'PVEPoolUser', 'PVEDatastoreUser'],
   storages: ['ssd-vms', 'isos-hdd'],
-  groups: { '2asir': {}, '2dam': {} },
+  groups: { 'asir2': {}, 'dam2': {} },
   users: {
-    'jperez-2asir@pve': usuario('Juan Pérez'),
-    'mfuente-2asir@pve': usuario('María Fuente'),
-    'anunez-2asir@pve': usuario('Ángel Núñez'),
+    'jperez-asir2@pve': usuario('Juan Pérez'),
+    'mfuente-asir2@pve': usuario('María Fuente'),
+    'anunez-asir2@pve': usuario('Ángel Núñez'),
     'profe1@pve': { groups: [], comment: 'Profe', password: 'x' },
   },
   pools: {
-    '2asir': { comment: 'Clase 2º ASIR', storage: [] },
-    '2asir/jperez-2asir': { comment: 'quota=50G; Juan Pérez', storage: ['ssd-vms'] },
-    '2asir/mfuente-2asir': { comment: 'quota=50G; María Fuente', storage: ['ssd-vms'] },
-    '2asir/anunez-2asir': { comment: 'quota=50G; Ángel Núñez', storage: ['ssd-vms'] },
-    '2dam': { comment: 'Clase 2º DAM', storage: [] },
-    '2dam/otro-2dam': { comment: '', storage: [] },
+    'asir2': { comment: 'Clase 2º ASIR', storage: [] },
+    'asir2/jperez-asir2': { comment: 'quota=50G; Juan Pérez', storage: ['ssd-vms'] },
+    'asir2/mfuente-asir2': { comment: 'quota=50G; María Fuente', storage: ['ssd-vms'] },
+    'asir2/anunez-asir2': { comment: 'quota=50G; Ángel Núñez', storage: ['ssd-vms'] },
+    'dam2': { comment: 'Clase 2º DAM', storage: [] },
+    'dam2/otro-dam2': { comment: '', storage: [] },
     plantillas: { comment: '', storage: [] },
   },
   acl: [],
   vms: {
-    'qemu/100': { node: 'pve1', pool: '2asir/jperez-2asir', name: 'debian-jperez', status: 'running', tags: 'practica3', config: {} },
-    'qemu/101': { node: 'pve2', pool: '2asir/jperez-2asir', name: 'web-jperez', status: 'stopped', config: {} },
-    'lxc/102': { node: 'pve1', pool: '2asir/mfuente-2asir', name: 'debian-mfuente', status: 'running', config: {} },
+    'qemu/100': { node: 'pve1', pool: 'asir2/jperez-asir2', name: 'debian-jperez', status: 'running', tags: 'practica3', config: {} },
+    'qemu/101': { node: 'pve2', pool: 'asir2/jperez-asir2', name: 'web-jperez', status: 'stopped', config: {} },
+    'lxc/102': { node: 'pve1', pool: 'asir2/mfuente-asir2', name: 'debian-mfuente', status: 'running', config: {} },
     'qemu/200': { node: 'pve1', pool: 'plantillas', name: 'debian-base', template: true, status: 'stopped', config: {} },
-    'qemu/300': { node: 'pve1', pool: '2dam/otro-2dam', name: 'debian-otro', status: 'running', config: {} },
+    'qemu/300': { node: 'pve1', pool: 'dam2/otro-dam2', name: 'debian-otro', status: 'running', config: {} },
   },
 });
 beforeEach(() => writeFileSync(estado, JSON.stringify(ESCENARIO())));
 
-const clase: Objetivo = { clase: '2asir', bases: [], filtro: '', etiqueta: '' };
+const clase: Objetivo = { clase: 'asir2', bases: [], filtro: '', etiqueta: '' };
 const estadoDe = (id: string) => leer().vms[id]?.status;
 
 describe('encender y apagar', () => {
@@ -102,7 +102,7 @@ describe('snapshots', () => {
     expect(r.salida).toContain('Saltadas: 2');
 
     r = ejecutar(scriptSnapshots(opc), ['ver']);
-    expect(r.salida).toMatch(/100\s+debian-jperez\s+2asir\/jperez-2asir\s+antes-p3/);
+    expect(r.salida).toMatch(/100\s+debian-jperez\s+asir2\/jperez-asir2\s+antes-p3/);
 
     expect(ejecutar(scriptSnapshots(opc), ['volver']).codigo).toBe(1);
     r = ejecutar(scriptSnapshots(opc), ['volver', '--yes']);
@@ -123,7 +123,7 @@ describe('recoger prácticas', () => {
     expect(Object.keys(leer().vms['qemu/100'].snapshots)).toEqual(['entrega-practica3']);
     expect(Object.keys(leer().vms['lxc/102'].snapshots)).toEqual(['entrega-practica3']);
     expect(r.salida).toContain('Recogidas ahora: 2');
-    expect(r.salida).toMatch(/no han entregado[\s\S]*2asir\/anunez-2asir/);
+    expect(r.salida).toMatch(/no han entregado[\s\S]*asir2\/anunez-asir2/);
     expect(r.salida).not.toMatch(/no han entregado[\s\S]*jperez/);
 
     r = ejecutar(scriptRecoger(opc));
@@ -150,14 +150,14 @@ describe('limpiar una práctica', () => {
 });
 
 describe('repartir una plantilla', () => {
-  const opc = { clase: '2asir', bases: [], plantilla: 'debian-base', prefijo: 'deb', storage: 'ssd-vms', encender: false };
+  const opc = { clase: 'asir2', bases: [], plantilla: 'debian-base', prefijo: 'deb', storage: 'ssd-vms', encender: false };
   it('clona la plantilla en el pool de cada alumno con el siguiente VMID libre', () => {
     const r = ejecutar(scriptRepartir(opc));
     expect(r.codigo, r.salida).toBe(0);
     const vms = leer().vms;
-    expect(vms['qemu/103']).toMatchObject({ name: 'deb-anunez', pool: '2asir/anunez-2asir', clonada_de: '200', storage: 'ssd-vms' });
-    expect(vms['qemu/104']).toMatchObject({ name: 'deb-jperez', pool: '2asir/jperez-2asir' });
-    expect(vms['qemu/105']).toMatchObject({ name: 'deb-mfuente', pool: '2asir/mfuente-2asir' });
+    expect(vms['qemu/103']).toMatchObject({ name: 'deb-anunez', pool: 'asir2/anunez-asir2', clonada_de: '200', storage: 'ssd-vms' });
+    expect(vms['qemu/104']).toMatchObject({ name: 'deb-jperez', pool: 'asir2/jperez-asir2' });
+    expect(vms['qemu/105']).toMatchObject({ name: 'deb-mfuente', pool: 'asir2/mfuente-asir2' });
     expect(r.salida).toContain('Clones creados: 3');
 
     const otra = ejecutar(scriptRepartir(opc));
@@ -182,36 +182,36 @@ describe('estado de la clase', () => {
   it('resume por alumno y señala a quien no tiene máquinas', () => {
     const r = ejecutar(scriptEstado({ ...clase, realm: 'pve' }));
     expect(r.codigo, r.salida).toBe(0);
-    expect(r.salida).toMatch(/jperez-2asir\s+2\s+1\s+2\.0G\s+2\s+64\/50\s+debian-jperez\*, web-jperez/);
+    expect(r.salida).toMatch(/jperez-asir2\s+2\s+1\s+2\.0G\s+2\s+64\/50\s+debian-jperez\*, web-jperez/);
     expect(r.salida).toContain('3 alumno(s) · 3 máquina(s) · 2 encendida(s)');
-    expect(r.salida).toContain('Sin ninguna máquina: anunez-2asir');
-    expect(r.salida).not.toContain('otro-2dam');
+    expect(r.salida).toContain('Sin ninguna máquina: anunez-asir2');
+    expect(r.salida).not.toContain('otro-dam2');
   });
 });
 
 describe('contraseñas', () => {
-  const opc = { usuarios: [{ userid: 'jperez-2asir@pve', password: 'Nueva-1' }, { userid: 'nadie@pve', password: 'x' }] };
+  const opc = { usuarios: [{ userid: 'jperez-asir2@pve', password: 'Nueva-1' }, { userid: 'nadie@pve', password: 'x' }] };
   it('cambia las que existen y avisa de las que no', () => {
     const r = ejecutar(scriptPassword(opc));
     expect(r.codigo).toBe(1);
-    expect(leer().users['jperez-2asir@pve'].password).toBe('Nueva-1');
+    expect(leer().users['jperez-asir2@pve'].password).toBe('Nueva-1');
     expect(r.salida).toContain('nadie@pve no existe');
   });
   it('--dry-run no cambia ni muestra contraseñas', () => {
     const r = ejecutar(scriptPassword(opc), ['--dry-run']);
-    expect(leer().users['jperez-2asir@pve'].password).toBe('vieja');
+    expect(leer().users['jperez-asir2@pve'].password).toBe('vieja');
     expect(r.salida).not.toContain('Nueva-1');
   });
 });
 
 describe('profesores de una clase', () => {
-  const opc = { clase: '2asir', profesores: ['profe1@pve'], rolesProfesor: 'PVEVMAdmin,PVEPoolUser', storageIsos: 'isos-hdd' };
+  const opc = { clase: 'asir2', profesores: ['profe1@pve'], rolesProfesor: 'PVEVMAdmin,PVEPoolUser', storageIsos: 'isos-hdd' };
   it('añade y quita', () => {
     let r = ejecutar(scriptProfesores(opc), ['anadir']);
     expect(r.codigo, r.salida).toBe(0);
     expect(leer().acl).toEqual([
-      ['/pool/2asir', 'user', 'profe1@pve', 'PVEVMAdmin'],
-      ['/pool/2asir', 'user', 'profe1@pve', 'PVEPoolUser'],
+      ['/pool/asir2', 'user', 'profe1@pve', 'PVEVMAdmin'],
+      ['/pool/asir2', 'user', 'profe1@pve', 'PVEPoolUser'],
       ['/storage/isos-hdd', 'user', 'profe1@pve', 'PVEDatastoreUser'],
     ]);
     r = ejecutar(scriptProfesores(opc), ['quitar']);
@@ -221,22 +221,22 @@ describe('profesores de una clase', () => {
 });
 
 describe('mover alumno de clase', () => {
-  const opc = { realm: 'pve', rol: 'Alumno', claseOrigen: '2asir', baseOrigen: 'jperez', claseDestino: '2dam', baseDestino: 'jperez', password: 'Nueva-2' };
+  const opc = { realm: 'pve', rol: 'Alumno', claseOrigen: 'asir2', baseOrigen: 'jperez', claseDestino: 'dam2', baseDestino: 'jperez', password: 'Nueva-2' };
   it('crea el usuario nuevo con sus máquinas y borra el antiguo', () => {
     const r = ejecutar(scriptMover(opc));
     expect(r.codigo, r.salida).toBe(0);
     const s = leer();
-    expect(s.users['jperez-2dam@pve']).toEqual({ groups: ['2dam'], comment: 'Juan Pérez', password: 'Nueva-2' });
-    expect(s.users['jperez-2asir@pve']).toBeUndefined();
-    expect(s.pools['2dam/jperez-2dam']).toEqual({ comment: 'quota=50G; Juan Pérez', storage: ['ssd-vms'] });
-    expect(s.pools['2asir/jperez-2asir']).toBeUndefined();
-    expect([s.vms['qemu/100'].pool, s.vms['qemu/101'].pool]).toEqual(['2dam/jperez-2dam', '2dam/jperez-2dam']);
-    expect(s.acl).toContainEqual(['/pool/2dam/jperez-2dam', 'user', 'jperez-2dam@pve', 'Alumno']);
+    expect(s.users['jperez-dam2@pve']).toEqual({ groups: ['dam2'], comment: 'Juan Pérez', password: 'Nueva-2' });
+    expect(s.users['jperez-asir2@pve']).toBeUndefined();
+    expect(s.pools['dam2/jperez-dam2']).toEqual({ comment: 'quota=50G; Juan Pérez', storage: ['ssd-vms'] });
+    expect(s.pools['asir2/jperez-asir2']).toBeUndefined();
+    expect([s.vms['qemu/100'].pool, s.vms['qemu/101'].pool]).toEqual(['dam2/jperez-dam2', 'dam2/jperez-dam2']);
+    expect(s.acl).toContainEqual(['/pool/dam2/jperez-dam2', 'user', 'jperez-dam2@pve', 'Alumno']);
   });
 
   it('se niega si la clase destino no existe', () => {
-    const r = ejecutar(scriptMover({ ...opc, claseDestino: '1smr' }));
+    const r = ejecutar(scriptMover({ ...opc, claseDestino: 'smr1' }));
     expect(r.codigo).toBe(1);
-    expect(r.salida).toContain('La clase 1smr no existe');
+    expect(r.salida).toContain('La clase smr1 no existe');
   });
 });

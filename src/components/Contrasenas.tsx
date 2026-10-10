@@ -24,7 +24,7 @@ export default function Contrasenas() {
   const [filas, setFilas] = useState<Fila[]>([]);
   useEffect(() => setAjustes(leerAjustes()), []);
 
-  // Usuarios del texto: «jperez-2asir», «jperez-2asir@pve» o un resumen TXT (que trae los nombres).
+  // Usuarios del texto: «jperez-asir2», «jperez-asir2@pve» o un resumen TXT (que trae los nombres).
   const usuarios = useMemo(() => {
     const resumen = leerResumen(texto);
     if (resumen) return resumen.usuarios.map((u) => ({ userid: u.userid, nombre: u.nombre }));
@@ -53,7 +53,7 @@ export default function Contrasenas() {
         </div>
         <div class="campo">
           <label for="pw-usuarios">Usuarios</label>
-          <textarea id="pw-usuarios" rows={3} placeholder="jperez-2asir" value={texto} onInput={(e) => setTexto(e.currentTarget.value)} spellcheck={false} style="min-height:90px" />
+          <textarea id="pw-usuarios" rows={3} placeholder="jperez-asir2" value={texto} onInput={(e) => setTexto(e.currentTarget.value)} spellcheck={false} style="min-height:90px" />
           <small>
             Separados por comas o espacios.{' '}
             <label style="cursor:pointer;text-decoration:underline">

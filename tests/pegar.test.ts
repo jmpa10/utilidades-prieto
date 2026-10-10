@@ -29,7 +29,7 @@ afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
 // Datos con todo lo que puede romper un pegado: apóstrofos, «!» y $.
 const opciones: OpcionesCreacion = {
-  clase: '1dart',
+  clase: 'dart1',
   claseNombre: `1º D'Art!x`,
   realm: 'pve',
   rol: 'Alumno',
@@ -74,19 +74,19 @@ function exclamacionesPeligrosas(texto: string): string[] {
 
 const scripts = {
   creacion: scriptCreacion(opciones),
-  borradoClase: scriptBorrado({ modo: 'clase', clase: '1dart', realm: 'pve', bases: [] }),
-  borradoLista: scriptBorrado({ modo: 'lista', clase: '1dart', realm: 'pve', bases: ['aobrien'] }),
-  auditoria: scriptAuditoria({ clase: '1dart', umbralAviso: 90 }),
+  borradoClase: scriptBorrado({ modo: 'clase', clase: 'dart1', realm: 'pve', bases: [] }),
+  borradoLista: scriptBorrado({ modo: 'lista', clase: 'dart1', realm: 'pve', bases: ['aobrien'] }),
+  auditoria: scriptAuditoria({ clase: 'dart1', umbralAviso: 90 }),
   preparar: scriptPreparar({ rol: 'Alumno' }),
-  energia: scriptEnergia({ clase: '1dart', bases: [], filtro: `d'a!x`, etiqueta: '', espera: 60 }),
-  snapshots: scriptSnapshots({ clase: '1dart', bases: ['aobrien'], filtro: '', etiqueta: 'p1', nombre: 'antes-p1', descripcion: `Antes de l'examen!x` }),
-  recoger: scriptRecoger({ clase: '1dart', bases: [], filtro: 'deb', etiqueta: '', practica: 'p1' }),
-  limpiar: scriptLimpiar({ clase: '1dart', bases: [], filtro: 'deb', etiqueta: '' }),
-  repartir: scriptRepartir({ clase: '1dart', bases: [], plantilla: `deb'!x`, prefijo: 'deb', storage: 'ssd-vms', encender: true }),
-  estado: scriptEstado({ clase: '1dart', bases: [], filtro: '', etiqueta: '', realm: 'pve' }),
-  password: scriptPassword({ usuarios: [{ userid: 'aobrien-1dart@pve', password: `a!b'c$HOME` }] }),
-  profesores: scriptProfesores({ clase: '1dart', profesores: ['profe1@pve'], rolesProfesor: 'PVEVMAdmin', storageIsos: 'isos-hdd' }),
-  mover: scriptMover({ realm: 'pve', rol: 'Alumno', claseOrigen: '1dart', baseOrigen: 'aobrien', claseDestino: '2dam', baseDestino: 'aobrien', password: `x!y'z` }),
+  energia: scriptEnergia({ clase: 'dart1', bases: [], filtro: `d'a!x`, etiqueta: '', espera: 60 }),
+  snapshots: scriptSnapshots({ clase: 'dart1', bases: ['aobrien'], filtro: '', etiqueta: 'p1', nombre: 'antes-p1', descripcion: `Antes de l'examen!x` }),
+  recoger: scriptRecoger({ clase: 'dart1', bases: [], filtro: 'deb', etiqueta: '', practica: 'p1' }),
+  limpiar: scriptLimpiar({ clase: 'dart1', bases: [], filtro: 'deb', etiqueta: '' }),
+  repartir: scriptRepartir({ clase: 'dart1', bases: [], plantilla: `deb'!x`, prefijo: 'deb', storage: 'ssd-vms', encender: true }),
+  estado: scriptEstado({ clase: 'dart1', bases: [], filtro: '', etiqueta: '', realm: 'pve' }),
+  password: scriptPassword({ usuarios: [{ userid: 'aobrien-dart1@pve', password: `a!b'c$HOME` }] }),
+  profesores: scriptProfesores({ clase: 'dart1', profesores: ['profe1@pve'], rolesProfesor: 'PVEVMAdmin', storageIsos: 'isos-hdd' }),
+  mover: scriptMover({ realm: 'pve', rol: 'Alumno', claseOrigen: 'dart1', baseOrigen: 'aobrien', claseDestino: 'dam2', baseDestino: 'aobrien', password: `x!y'z` }),
 };
 
 describe('bloque para pegar', () => {
@@ -120,8 +120,8 @@ describe('bloque para pegar', () => {
     writeFileSync(estado, JSON.stringify({ version: '8.2.4', users: {}, groups: {}, pools: {}, roles: ['Alumno', 'PVESDNUser', 'PVEVMAdmin', 'PVEDatastoreUser'], acl: [], storages: ['local-lvm', 'local'], bridges: ['vmbr1'], vms: {} }));
     const salida = pegar(paraPegar(scripts.creacion, { autoborrar: true }));
     const s = JSON.parse(readFileSync(estado, 'utf8'));
-    expect(s.users['aobrien-1dart@pve'], salida).toMatchObject({ password: `a!b'c$HOME`, comment: `Ana O'Brien!x` });
-    expect(s.users['lruiz-1dart@pve'].password).toBe('!!ultimo');
+    expect(s.users['aobrien-dart1@pve'], salida).toMatchObject({ password: `a!b'c$HOME`, comment: `Ana O'Brien!x` });
+    expect(s.users['lruiz-dart1@pve'].password).toBe('!!ultimo');
     expect(salida).toContain('Creados: 2');
     expect(salida).not.toContain('Recuerda borrar');
     expect(readdirSync(tmp)).toEqual([]);

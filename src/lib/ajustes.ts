@@ -12,7 +12,7 @@ export interface Ajustes {
   poolPlantillas: string;
   /** Roles de los profesores sobre el pool de la clase. */
   rolesProfesor: string;
-  /** Bridge de cada clase («2asir» → «vmbr2asir»), recordado al generar. */
+  /** Bridge de cada clase («asir2» → «vmbrasir2»), recordado al generar. */
   bridges: Record<string, string>;
   cuotaGB: number;
   estiloPassword: EstiloPassword;

@@ -9,7 +9,7 @@ export interface AltaUsuario {
 }
 
 export interface OpcionesCreacion {
-  /** Identificador normalizado de la clase («2asir»). Vacío → pool plano y sin grupo. */
+  /** Identificador normalizado de la clase («asir2»). Vacío → pool plano y sin grupo. */
   clase: string;
   /** Nombre legible de la clase («2º ASIR»). */
   claseNombre: string;
@@ -69,6 +69,7 @@ comprobar_entorno
 existe "$ROLES" "$ROL" || fallo "El rol '$ROL' no existe. Créalo antes en Centro de datos → Permisos → Roles."
 if [[ -n "$CLASE" ]]; then
   version_minima 8 1 || fallo "Los pools anidados necesitan Proxmox VE 8.1 o superior."
+  [[ "$CLASE" =~ ^[a-z] ]] || fallo "La clase '$CLASE' debe empezar por una letra (Proxmox no admite pools como '2asir'): usa, por ejemplo, 'asir2'."
 fi
 for st in "$STORAGE" "$STORAGE_ISOS"; do
   [[ -z "$st" ]] || pvesh get "/storage/$st" >/dev/null 2>&1 || fallo "El storage '$st' no existe."

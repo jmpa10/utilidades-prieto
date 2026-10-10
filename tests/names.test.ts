@@ -17,6 +17,9 @@ describe('parsearLinea', () => {
   it('normaliza mayúsculas y espacios', () => {
     expect(parsearLinea('  NÚÑEZ   ibáñez ,  ÁLVARO ')?.completo).toBe('Álvaro Núñez Ibáñez');
   });
+  it('pone mayúscula tras el guion', () => {
+    expect(parsearLinea('FERNÁNDEZ-CANO ortiz, ana belén')!.completo).toBe('Ana Belén Fernández-Cano Ortiz');
+  });
   it('descarta vacías y comentarios', () => {
     expect(parsearLinea('')).toBeNull();
     expect(parsearLinea('# lista 2º ASIR')).toBeNull();
@@ -36,13 +39,17 @@ describe('usuarios', () => {
     expect(asignarBases(parsearTexto('Pérez, Juan'), ['jperez'])[0].base).toBe('jperez2');
   });
   it('compone usuario y pool', () => {
-    expect(claseId('2º ASIR')).toBe('2asir');
-    expect(usuarioCompleto('jperez', '2asir')).toBe('jperez-2asir');
-    expect(poolDe('jperez', '2asir')).toBe('2asir/jperez-2asir');
+    expect(claseId('2º ASIR')).toBe('asir2');
+    expect(claseId('1º SMR B')).toBe('smrb1');
+    expect(claseId('dam2')).toBe('dam2');
+    expect(claseId('2026')).toBe('clase2026');
+    expect(claseId('')).toBe('');
+    expect(usuarioCompleto('jperez', 'asir2')).toBe('jperez-asir2');
+    expect(poolDe('jperez', 'asir2')).toBe('asir2/jperez-asir2');
     expect(poolDe('jperez', '')).toBe('jperez');
   });
   it('valida identificadores', () => {
-    expect(validarIdentificador('jperez-2asir')).toBeNull();
+    expect(validarIdentificador('jperez-asir2')).toBeNull();
     expect(validarIdentificador('J Pérez')).not.toBeNull();
     expect(validarIdentificador('')).not.toBeNull();
   });

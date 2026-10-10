@@ -21,13 +21,16 @@ export default function Energia() {
           <p>Al acabar la sesión, apagar la clase libera memoria y procesador para las demás.</p>
         </div>
         <SelectorObjetivo realm={ajustes.realm} onChange={onChange} conFiltro />
-        <div class="campos" style="margin-top:18px">
+        <details class="mas-opciones">
+          <summary>Más opciones</summary>
+        <div class="campos" style="margin-top:12px">
           <div class="campo">
             <label for="espera">Espera antes de forzar el apagado (segundos)</label>
             <input id="espera" type="number" min="10" value={espera} onInput={(e) => setEspera(Number(e.currentTarget.value) || 120)} />
             <small>Las máquinas que no tengan agente o no respondan se apagan a la fuerza pasado este tiempo.</small>
           </div>
         </div>
+        </details>
       </section>
       {valido && (
         <section class="panel">

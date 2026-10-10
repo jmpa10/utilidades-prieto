@@ -17,7 +17,7 @@ afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
 const ROLES_PVE = ['PVEDatastoreUser', 'PVESDNUser', 'PVETemplateUser', 'PVEVMAdmin', 'PVEPoolUser'];
 const PROFE = { 'profe1@pve': { groups: [], comment: 'Profesora', password: 'x' } };
-const VACIO = { version: '8.2.4', users: PROFE, groups: {}, pools: {}, roles: ['Alumno', ...ROLES_PVE], acl: [], storages: ['ssd-vms', 'isos-hdd'], bridges: ['vmbr2asir'], vms: {} };
+const VACIO = { version: '8.2.4', users: PROFE, groups: {}, pools: {}, roles: ['Alumno', ...ROLES_PVE], acl: [], storages: ['ssd-vms', 'isos-hdd'], bridges: ['vmbrasir2'], vms: {} };
 const leer = () => JSON.parse(readFileSync(estado, 'utf8'));
 const escribir = (s: object) => writeFileSync(estado, JSON.stringify(s));
 
@@ -33,14 +33,14 @@ function ejecutar(script: string, args: string[] = []) {
 }
 
 const base: OpcionesCreacion = {
-  clase: '2asir',
+  clase: 'asir2',
   claseNombre: '2º ASIR',
   realm: 'pve',
   rol: 'Alumno',
   cuotaGB: 50,
   storage: 'ssd-vms',
   storageIsos: 'isos-hdd',
-  bridge: 'vmbr2asir',
+  bridge: 'vmbrasir2',
   poolPlantillas: 'plantillas',
   profesores: ['profe1@pve', 'fantasma@pve'],
   rolesProfesor: 'PVEVMAdmin,PVEPoolUser,PVEDatastoreUser',
@@ -56,9 +56,9 @@ describe('sintaxis', () => {
   it('los tres scripts pasan bash -n', () => {
     for (const s of [
       scriptCreacion(base),
-      scriptBorrado({ modo: 'clase', clase: '2asir', realm: 'pve', bases: [] }),
-      scriptBorrado({ modo: 'lista', clase: '2asir', realm: 'pve', bases: ['jperez'] }),
-      scriptAuditoria({ clase: '2asir', umbralAviso: 90 }),
+      scriptBorrado({ modo: 'clase', clase: 'asir2', realm: 'pve', bases: [] }),
+      scriptBorrado({ modo: 'lista', clase: 'asir2', realm: 'pve', bases: ['jperez'] }),
+      scriptAuditoria({ clase: 'asir2', umbralAviso: 90 }),
     ]) {
       expect(spawnSync('bash', ['-n'], { input: s }).status).toBe(0);
     }
@@ -72,11 +72,11 @@ describe('creación', () => {
     const r = ejecutar(scriptCreacion(base));
     expect(r.codigo, r.salida).toBe(0);
     const s = leer();
-    expect(Object.keys(s.groups)).toEqual(['2asir']);
-    expect(Object.keys(s.pools)).toEqual(['2asir', 'plantillas', '2asir/jperez-2asir', '2asir/mfuente-2asir', '2asir/anunez-2asir']);
-    expect(s.pools['2asir/jperez-2asir']).toEqual({ comment: 'quota=50G; Juan Pérez García', storage: ['ssd-vms'] });
-    expect(s.users['jperez-2asir@pve']).toEqual({ groups: ['2asir'], comment: 'Juan Pérez García', password: `Lince-Verde-1'$!` });
-    expect(s.acl).toContainEqual(['/pool/2asir/jperez-2asir', 'user', 'jperez-2asir@pve', 'Alumno']);
+    expect(Object.keys(s.groups)).toEqual(['asir2']);
+    expect(Object.keys(s.pools)).toEqual(['asir2', 'plantillas', 'asir2/jperez-asir2', 'asir2/mfuente-asir2', 'asir2/anunez-asir2']);
+    expect(s.pools['asir2/jperez-asir2']).toEqual({ comment: 'quota=50G; Juan Pérez García', storage: ['ssd-vms'] });
+    expect(s.users['jperez-asir2@pve']).toEqual({ groups: ['asir2'], comment: 'Juan Pérez García', password: `Lince-Verde-1'$!` });
+    expect(s.acl).toContainEqual(['/pool/asir2/jperez-asir2', 'user', 'jperez-asir2@pve', 'Alumno']);
     expect(r.salida).toContain('Creados: 3');
   });
 
@@ -84,15 +84,15 @@ describe('creación', () => {
     const r = ejecutar(scriptCreacion(base));
     expect(r.codigo, r.salida).toBe(0);
     const acl = leer().acl;
-    expect(acl).toContainEqual(['/sdn/zones/localnetwork/vmbr2asir', 'group', '2asir', 'PVESDNUser']);
-    expect(acl).toContainEqual(['/storage/isos-hdd', 'group', '2asir', 'AlumnoISO']);
-    expect(acl).toContainEqual(['/pool/plantillas', 'group', '2asir', 'PVETemplateUser']);
+    expect(acl).toContainEqual(['/sdn/zones/localnetwork/vmbrasir2', 'group', 'asir2', 'PVESDNUser']);
+    expect(acl).toContainEqual(['/storage/isos-hdd', 'group', 'asir2', 'AlumnoISO']);
+    expect(acl).toContainEqual(['/pool/plantillas', 'group', 'asir2', 'PVETemplateUser']);
     for (const rol of ['PVEVMAdmin', 'PVEPoolUser', 'PVEDatastoreUser']) {
-      expect(acl).toContainEqual(['/pool/2asir', 'user', 'profe1@pve', rol]);
+      expect(acl).toContainEqual(['/pool/asir2', 'user', 'profe1@pve', rol]);
     }
     expect(acl).toContainEqual(['/storage/isos-hdd', 'user', 'profe1@pve', 'PVEDatastoreUser']);
     // El grupo de la clase no recibe nada sobre el pool de la clase: cada alumno solo ve el suyo.
-    expect(acl.filter((a: string[]) => a[0].startsWith('/pool/2asir') && a[2] === '2asir')).toEqual([]);
+    expect(acl.filter((a: string[]) => a[0].startsWith('/pool/asir2') && a[2] === 'asir2')).toEqual([]);
     expect(leer().roles).toContain('AlumnoISO');
     expect(r.salida).toContain('El profesor fantasma@pve no existe');
   });
@@ -101,7 +101,7 @@ describe('creación', () => {
     escribir({ ...VACIO, bridges: [] });
     const r = ejecutar(scriptCreacion(base));
     expect(r.codigo, r.salida).toBe(0);
-    expect(r.salida).toContain('El bridge vmbr2asir no aparece en este nodo');
+    expect(r.salida).toContain('El bridge vmbrasir2 no aparece en este nodo');
   });
 
   it('aborta si falta el storage de ISOs', () => {
@@ -155,28 +155,28 @@ describe('auditoría y borrado', () => {
     ejecutar(scriptCreacion(base));
     const s = leer();
     s.vms = {
-      'qemu/100': { node: 'pve1', pool: '2asir/jperez-2asir', status: 'running', config: { scsi0: 'local-lvm:vm-100-disk-0,size=64G', ide2: 'local:iso/d.iso,media=cdrom,size=600M', efidisk0: 'local-lvm:vm-100-disk-1,size=4M' } },
-      'lxc/101': { node: 'pve2', pool: '2asir/jperez-2asir', status: 'running', config: { rootfs: 'local-lvm:vm-101-disk-0,size=8G' } },
-      'qemu/102': { node: 'pve1', pool: '2asir/anunez-2asir', status: 'stopped', config: { virtio0: 'local-lvm:vm-102-disk-0,size=20G' } },
+      'qemu/100': { node: 'pve1', pool: 'asir2/jperez-asir2', status: 'running', config: { scsi0: 'local-lvm:vm-100-disk-0,size=64G', ide2: 'local:iso/d.iso,media=cdrom,size=600M', efidisk0: 'local-lvm:vm-100-disk-1,size=4M' } },
+      'lxc/101': { node: 'pve2', pool: 'asir2/jperez-asir2', status: 'running', config: { rootfs: 'local-lvm:vm-101-disk-0,size=8G' } },
+      'qemu/102': { node: 'pve1', pool: 'asir2/anunez-asir2', status: 'stopped', config: { virtio0: 'local-lvm:vm-102-disk-0,size=20G' } },
     };
     escribir(s);
   });
 
   it('la auditoría detecta quien supera la cuota', () => {
-    const r = ejecutar(scriptAuditoria({ clase: '2asir', umbralAviso: 90 }));
+    const r = ejecutar(scriptAuditoria({ clase: 'asir2', umbralAviso: 90 }));
     expect(r.codigo).toBe(1);
-    expect(r.salida).toMatch(/2asir\/jperez-2asir\s+2\s+72\.0\s+50\s+144%\s+EXCEDIDO/);
-    expect(r.salida).toMatch(/2asir\/anunez-2asir\s+1\s+20\.0\s+50\s+40%\s+ok/);
+    expect(r.salida).toMatch(/asir2\/jperez-asir2\s+2\s+72\.0\s+50\s+144%\s+EXCEDIDO/);
+    expect(r.salida).toMatch(/asir2\/anunez-asir2\s+1\s+20\.0\s+50\s+40%\s+ok/);
   });
 
   it('sin --yes y sin terminal no borra', () => {
-    const r = ejecutar(scriptBorrado({ modo: 'clase', clase: '2asir', realm: 'pve', bases: [] }));
+    const r = ejecutar(scriptBorrado({ modo: 'clase', clase: 'asir2', realm: 'pve', bases: [] }));
     expect(r.codigo).toBe(1);
     expect(Object.keys(leer().users)).toHaveLength(4);
   });
 
   it('borra toda la clase: VMs, pools, usuarios, pool padre y grupo', () => {
-    const r = ejecutar(scriptBorrado({ modo: 'clase', clase: '2asir', realm: 'pve', bases: [] }), ['--yes']);
+    const r = ejecutar(scriptBorrado({ modo: 'clase', clase: 'asir2', realm: 'pve', bases: [] }), ['--yes']);
     expect(r.codigo, r.salida).toBe(0);
     expect(r.salida).toContain('3 usuario(s) · 3 VM/CT');
     const s = leer();
@@ -187,17 +187,17 @@ describe('auditoría y borrado', () => {
   });
 
   it('borra un único usuario y deja el resto', () => {
-    const r = ejecutar(scriptBorrado({ modo: 'usuario', clase: '2asir', realm: 'pve', bases: ['jperez'] }), ['--yes']);
+    const r = ejecutar(scriptBorrado({ modo: 'usuario', clase: 'asir2', realm: 'pve', bases: ['jperez'] }), ['--yes']);
     expect(r.codigo, r.salida).toBe(0);
     const s = leer();
-    expect(Object.keys(s.users)).toEqual(['profe1@pve', 'mfuente-2asir@pve', 'anunez-2asir@pve']);
+    expect(Object.keys(s.users)).toEqual(['profe1@pve', 'mfuente-asir2@pve', 'anunez-asir2@pve']);
     expect(Object.keys(s.vms)).toEqual(['qemu/102']);
-    expect(s.pools['2asir']).toBeDefined();
+    expect(s.pools['asir2']).toBeDefined();
   });
 
   it('--dry-run del borrado no toca nada', () => {
     const antes = leer();
-    const r = ejecutar(scriptBorrado({ modo: 'lista', clase: '2asir', realm: 'pve', bases: ['jperez', 'anunez'] }), ['--dry-run']);
+    const r = ejecutar(scriptBorrado({ modo: 'lista', clase: 'asir2', realm: 'pve', bases: ['jperez', 'anunez'] }), ['--dry-run']);
     expect(r.codigo, r.salida).toBe(0);
     const despues = leer();
     expect(despues.users).toEqual(antes.users);

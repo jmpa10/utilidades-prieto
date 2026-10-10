@@ -26,9 +26,14 @@ export function slug(texto: string): string {
     .replace(/[^a-z0-9]/g, '');
 }
 
-/** «2º ASIR» → «2asir». */
+/**
+ * «2º ASIR» → «asir2». Proxmox 9 exige que los pools empiecen por letra,
+ * así que el número del curso pasa al final.
+ */
 export function claseId(texto: string): string {
-  return slug(texto);
+  const s = slug(texto);
+  const [, num, resto] = s.match(/^(\d*)(.*)$/)!;
+  return resto ? resto + num : num && `clase${num}`;
 }
 
 function palabras(texto: string): string[] {
@@ -37,7 +42,7 @@ function palabras(texto: string): string[] {
 
 function capitalizar(texto: string): string {
   return palabras(texto)
-    .map((p) => (PARTICULAS.has(p.toLowerCase()) ? p.toLowerCase() : p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()))
+    .map((p) => (PARTICULAS.has(p.toLowerCase()) ? p.toLowerCase() : p.toLowerCase().replace(/(^|-)(\p{L})/gu, (_, g, l) => g + l.toUpperCase())))
     .join(' ');
 }
 
@@ -132,12 +137,12 @@ export function asignarBases(personas: Persona[], ocupados: Iterable<string> = [
   });
 }
 
-/** Usuario de Proxmox sin realm: «jperez-2asir» (o «jperez» si no hay clase). */
+/** Usuario de Proxmox sin realm: «jperez-asir2» (o «jperez» si no hay clase). */
 export function usuarioCompleto(base: string, clase: string): string {
   return clase ? `${base}-${clase}` : base;
 }
 
-/** Pool del usuario: «2asir/jperez-2asir» (anidado) o «jperez» (plano). */
+/** Pool del usuario: «asir2/jperez-asir2» (anidado) o «jperez» (plano). */
 export function poolDe(base: string, clase: string): string {
   const user = usuarioCompleto(base, clase);
   return clase ? `${clase}/${user}` : user;

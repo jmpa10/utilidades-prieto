@@ -1,0 +1,19 @@
+# Lista de prueba para «Crear usuarios» (nombres inventados)
+# Formato: Apellidos, Nombre (una persona por línea). Las líneas con # se ignoran.
+
+Pérez García, Juan
+de la Fuente Ruiz, María
+Núñez Iglesias, Íñigo
+García López, José Luis
+García Lorenzo, Javier
+Martín Sánchez, Lucía
+Fernández-Cano Ortiz, Ana Belén
+Ruiz, Carlos
+Gómez Peña, Sofía
+López del Río, Álvaro
+Sánchez Martín, Noelia
+Ortega Vázquez, Daniel
+
+# Sin coma: Nombre Apellido1 Apellido2
+Pablo Moreno Díaz
+Elena Castro Gil

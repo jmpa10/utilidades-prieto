@@ -113,7 +113,7 @@ function CamposClase({ bridge, profesores, realm, onBridge, onProfesores }: {
     <div class="campos">
       <div class="campo">
         <label for="bridge">Bridge de la clase</label>
-        <input id="bridge" type="text" placeholder="vmbr2asir" value={bridge} onInput={(e) => onBridge(e.currentTarget.value.trim())} />
+        <input id="bridge" type="text" placeholder="vmbrasir2" value={bridge} onInput={(e) => onBridge(e.currentTarget.value.trim())} />
         <small>{bridge ? 'Solo esta clase podrá conectar sus VMs a él.' : 'Sin bridge, los alumnos no podrán poner red a sus VMs.'}</small>
       </div>
       <div class="campo">
@@ -231,7 +231,7 @@ function Lote({ ajustes }: { ajustes: Ajustes }) {
               <div class="campo">
                 <label for="clase">Clase</label>
                 <input id="clase" type="text" placeholder="2º ASIR" value={claseNombre} aria-invalid={!!errorClase} onInput={(e) => setClaseNombre(e.currentTarget.value)} autoFocus />
-                {errorClase ? <small class="error">{errorClase}</small> : <small>Se guarda como <code>{clase || '2asir'}</code></small>}
+                {errorClase ? <small class="error">{errorClase}</small> : <small>Se guarda como <code>{clase || 'asir2'}</code></small>}
               </div>
               <div class="campo">
                 <label for="esperados">¿Cuántos alumnos son?</label>
@@ -453,7 +453,7 @@ function Individual({ ajustes }: { ajustes: Ajustes }) {
           {clase && (
             <div class="campo">
               <label for="ind-bridge">Bridge de la clase</label>
-              <input id="ind-bridge" type="text" placeholder="vmbr2asir" value={bridge} onInput={(e) => (setBridge(e.currentTarget.value.trim()), setBridgeEditado(true))} />
+              <input id="ind-bridge" type="text" placeholder="vmbrasir2" value={bridge} onInput={(e) => (setBridge(e.currentTarget.value.trim()), setBridgeEditado(true))} />
               <small>Si la clase ya existe, se reutiliza todo lo que tenga.</small>
             </div>
           )}

@@ -6,7 +6,7 @@ export type ModoBorrado = 'clase' | 'lista' | 'usuario';
 
 export interface OpcionesBorrado {
   modo: ModoBorrado;
-  /** Clase normalizada («2asir»). En modo usuario puede ir vacía (pool plano). */
+  /** Clase normalizada («asir2»). En modo usuario puede ir vacía (pool plano). */
   clase: string;
   realm: string;
   /** Bases de usuario («jperez») para los modos lista y usuario. */

@@ -86,6 +86,7 @@ elif cmd == "pveum":
     elif obj == "pool" and accion == "add":
         p = pos[0]
         if p in S["pools"]: fallo("pool exists")
+        if any(not x[:1].isalpha() for x in p.split("/")): fallo("create pool failed: pool name must start with a letter")
         if "/" in p and p.rsplit("/", 1)[0] not in S["pools"]: fallo("parent pool does not exist")
         S["pools"][p] = dict(comment=o.get("comment", ""), storage=[])
     elif obj == "pool" and accion == "modify":
