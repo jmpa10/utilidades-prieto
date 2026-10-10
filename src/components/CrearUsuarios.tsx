@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import Icono from './Icono';
 import VisorScript, { type Variante } from './VisorScript';
+import ProyectoTerraform, { SelectorMetodo, useMetodo } from './Terraform';
 import Credenciales from './Credenciales';
 import { listaProfesores, profesorValido } from '../lib/profesores';
 import { AJUSTES_POR_DEFECTO, descargar, leerAjustes, recordarBridge, type Ajustes } from '../lib/ajustes';
 import { asignarBases, baseUsuario, claseId, formatoLista, parsearLinea, parsearTexto, poolDe, usuarioCompleto, validarIdentificador, type Persona } from '../lib/names';
 import { generarPassword } from '../lib/passwords';
-import { scriptCreacion } from '../lib/proxmox/create';
+import { scriptCreacion, type OpcionesCreacion } from '../lib/proxmox/create';
+import { proyectoClase } from '../lib/terraform/clase';
 import { resumenTxt } from '../lib/proxmox/resumen';
 
 interface Fila {
@@ -17,11 +19,17 @@ interface Fila {
   avisos: string[];
 }
 
-const PASOS = ['Clase', 'Alumnos', 'Revisión', 'Script'];
+const PASOS = ['Clase', 'Alumnos', 'Revisión', 'Aplicar'];
 const VARIANTES: Variante[] = [
   { id: 'simular', nombre: 'Simular', args: ['--dry-run'], explicacion: 'Muestra todo lo que haría, sin cambiar nada en Proxmox.' },
   { id: 'crear', nombre: 'Crear usuarios', args: [], explicacion: 'Crea grupo, pools, usuarios y permisos. Se puede repetir sin duplicar.' },
 ];
+const comandosTerraform = (carpeta: string) => `cd ${carpeta}
+export PROXMOX_VE_API_TOKEN='terraform@pve!web=…'   # cómo crearlo: LEEME.md
+terraform init
+terraform plan    # revisa lo que va a crear
+terraform apply`;
+
 const EJEMPLO = `# Una persona por línea: Apellidos, Nombre
 Pérez García, Juan
 de la Fuente Ruiz, María José
@@ -138,6 +146,7 @@ function Lote({ ajustes }: { ajustes: Ajustes }) {
   const [bridgeEditado, setBridgeEditado] = useState(false);
   const [profesoresTexto, setProfesoresTexto] = useState('');
   const [arrastrando, setArrastrando] = useState(false);
+  const [metodo, setMetodo] = useMetodo();
   const fichero = useRef<HTMLInputElement>(null);
   const titulo = useRef<HTMLHeadingElement>(null);
 
@@ -169,17 +178,17 @@ function Lote({ ajustes }: { ajustes: Ajustes }) {
   }, [filas, clase]);
   const hayErrores = erroresFila.some(Boolean) || !recursos.rol;
 
-  const script = useMemo(
-    () =>
-      paso === 3
-        ? scriptCreacion({
-            clase, claseNombre, realm: ajustes.realm, rol: recursos.rol, cuotaGB: recursos.cuotaGB || null,
-            storage: recursos.storage, storageIsos: recursos.storageIsos, poolPlantillas: recursos.poolPlantillas,
-            bridge, profesores, rolesProfesor: ajustes.rolesProfesor,
-            usuarios: filas.map((f) => ({ base: f.base, nombre: f.persona.completo, password: f.password })),
-          })
-        : '',
-    [paso, filas, recursos, clase, claseNombre, ajustes, bridge, profesoresTexto],
+  const opciones = (): OpcionesCreacion => ({
+    clase, claseNombre, realm: ajustes.realm, rol: recursos.rol, cuotaGB: recursos.cuotaGB || null,
+    storage: recursos.storage, storageIsos: recursos.storageIsos, poolPlantillas: recursos.poolPlantillas,
+    bridge, profesores, rolesProfesor: ajustes.rolesProfesor,
+    usuarios: filas.map((f) => ({ base: f.base, nombre: f.persona.completo, password: f.password })),
+  });
+  const dependencias = [paso, metodo, filas, recursos, clase, claseNombre, ajustes, bridge, profesoresTexto];
+  const script = useMemo(() => (paso === 3 && metodo === 'script' ? scriptCreacion(opciones()) : ''), dependencias);
+  const proyecto = useMemo(
+    () => (paso === 3 && metodo === 'terraform' ? proyectoClase({ ...opciones(), endpoint: ajustes.urlProxmox }) : null),
+    dependencias,
   );
 
   const resumenLote = () =>
@@ -357,14 +366,33 @@ function Lote({ ajustes }: { ajustes: Ajustes }) {
         {paso === 3 && (
           <>
             <div class="panel-cabecera">
-              <h2 tabIndex={-1} ref={titulo}>Script listo para {claseNombre}</h2>
-              <p>Crea {filas.length} usuarios con su pool. Puedes ejecutarlo más de una vez: se salta lo que ya existe.</p>
+              <h2 tabIndex={-1} ref={titulo}>{metodo === 'script' ? 'Script' : 'Proyecto Terraform'} listo para {claseNombre}</h2>
+              <p>
+                {metodo === 'script'
+                  ? `Crea ${filas.length} usuarios con su pool. Puedes ejecutarlo más de una vez: se salta lo que ya existe.`
+                  : `Describe la clase con sus ${filas.length} alumnos. Terraform la crea y, a lo largo del curso, aplica las altas y bajas que hagas en la lista.`}
+              </p>
+            </div>
+            <div style="margin-bottom:20px">
+              <SelectorMetodo metodo={metodo} onChange={setMetodo} />
             </div>
             <div class="aviso aviso-ok" style="margin-bottom:20px">
               <Icono nombre="fichero" />
               <span>Se ha descargado <code>resumen-{clase}.txt</code> con los usuarios y contraseñas creados. Guárdalo: lo necesitarás para borrar la clase.</span>
             </div>
-            <VisorScript script={script} fichero={`crear-${clase}.sh`} variantes={VARIANTES} conPasswords />
+            {proyecto ? (
+              <ProyectoTerraform ficheros={proyecto} carpeta={`terraform-${clase}`} comandos={comandosTerraform(`terraform-${clase}`)}>
+                <div class="aviso">
+                  <Icono nombre="alerta" />
+                  <span>
+                    <strong>Gestiona esta clase siempre con Terraform.</strong> Para altas y bajas, edita <code>alumnos</code> en <code>terraform.tfvars</code> y aplica;
+                    para borrarla, <code>terraform destroy</code>. No uses con ella Mover alumno, Profesores ni Borrar usuarios. El <code>.tfvars</code> y el <code>.tfstate</code> llevan las contraseñas.
+                  </span>
+                </div>
+              </ProyectoTerraform>
+            ) : (
+              <VisorScript script={script} fichero={`crear-${clase}.sh`} variantes={VARIANTES} conPasswords />
+            )}
           </>
         )}
 
@@ -374,7 +402,7 @@ function Lote({ ajustes }: { ajustes: Ajustes }) {
           ) : <span />}
           {paso < 3 && (
             <button type="button" class="btn btn-primario" disabled={!puedeAvanzar} onClick={() => irA(paso + 1)}>
-              {paso === 2 ? 'Generar script' : 'Continuar'}
+              {paso === 2 ? (metodo === 'script' ? 'Generar script' : 'Generar proyecto') : 'Continuar'}
               <Icono nombre="adelante" tam={18} />
             </button>
           )}

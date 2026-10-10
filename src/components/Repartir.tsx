@@ -2,7 +2,10 @@ import { useEffect, useState } from 'preact/hooks';
 import SelectorObjetivo from './SelectorObjetivo';
 import VisorScript, { type Variante } from './VisorScript';
 import { useObjetivo } from './useObjetivo';
+import Icono from './Icono';
+import ProyectoTerraform, { SelectorMetodo, useMetodo } from './Terraform';
 import { scriptRepartir, validarPrefijo } from '../lib/proxmox/repartir';
+import { ficheroRepartir, tfRepartir } from '../lib/terraform/repartir';
 
 const VARIANTES: Variante[] = [
   { id: 'simular', nombre: 'Simular', args: ['--dry-run'], explicacion: 'Muestra qué clones haría y a quién.' },
@@ -15,6 +18,7 @@ export default function Repartir() {
   const [prefijo, setPrefijo] = useState('');
   const [storage, setStorage] = useState('');
   const [encender, setEncender] = useState(false);
+  const [metodo, setMetodo] = useMetodo();
   useEffect(() => setStorage(ajustes.storage), [ajustes]);
   const errorPrefijo = prefijo ? validarPrefijo(prefijo) : null;
   const listo = valido && !!plantilla.trim() && !!prefijo && !errorPrefijo;
@@ -53,11 +57,30 @@ export default function Repartir() {
       </section>
       {listo && (
         <section class="panel">
-          <VisorScript
-            script={scriptRepartir({ clase: objetivo.clase, bases: objetivo.bases, plantilla, prefijo, storage, encender })}
-            fichero={`repartir-${prefijo}-${objetivo.clase}.sh`}
-            variantes={VARIANTES}
-          />
+          <div style="margin-bottom:20px">
+            <SelectorMetodo metodo={metodo} onChange={setMetodo} />
+          </div>
+          {metodo === 'script' ? (
+            <VisorScript
+              script={scriptRepartir({ clase: objetivo.clase, bases: objetivo.bases, plantilla, prefijo, storage, encender })}
+              fichero={`repartir-${prefijo}-${objetivo.clase}.sh`}
+              variantes={VARIANTES}
+            />
+          ) : (
+            <ProyectoTerraform
+              ficheros={{ [ficheroRepartir(prefijo)]: tfRepartir({ clase: objetivo.clase, bases: objetivo.bases, plantilla, prefijo, storage, encender }) }}
+              comandos={`# Copia ${ficheroRepartir(prefijo)} en la carpeta terraform-${objetivo.clase}\ncd terraform-${objetivo.clase}\nterraform plan    # revisa qué copias va a crear\nterraform apply`}
+            >
+              <div class="aviso">
+                <Icono nombre="info" />
+                <span>
+                  Solo para clases creadas con Terraform: el fichero se añade a su proyecto y usa su lista de alumnos.
+                  {objetivo.bases.length === 0 && ' Quien se dé de alta después también recibirá su copia.'} Solo plantillas de máquina virtual, no de contenedor.
+                  Para retirar las copias, borra el fichero y aplica.
+                </span>
+              </div>
+            </ProyectoTerraform>
+          )}
         </section>
       )}
     </>

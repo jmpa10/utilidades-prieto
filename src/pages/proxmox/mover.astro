@@ -7,6 +7,7 @@ import MoverAlumno from '../../components/MoverAlumno';
     <a class="miga" href="/proxmox/">Todas las utilidades</a>
     <h1>Mover alumno</h1>
     <p>Cambia a un alumno de clase: recibe un usuario de su clase nueva y se lleva sus máquinas.</p>
+    <p class="nota-centro">Si las clases se crearon con Terraform, no uses este script: da de alta al alumno en el <code>terraform.tfvars</code> de la clase nueva y de baja en el de la antigua (sus máquinas no se trasladan).</p>
   </header>
   <MoverAlumno client:load />
 </Portal>

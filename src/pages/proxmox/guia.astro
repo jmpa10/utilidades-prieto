@@ -56,6 +56,16 @@ import PrepararProxmox from '../../components/PrepararProxmox';
   </details>
 
   <details class="panel desplegable">
+    <summary><h2>¿Scripts o Terraform?</h2></summary>
+    <p>«Crear usuarios» y «Repartir una plantilla» ofrecen dos formas de aplicar los cambios:</p>
+    <ul class="notas">
+      <li><strong>Terminal del nodo</strong> (lo más sencillo): copias un bloque y lo pegas en la Shell de Proxmox. No hace falta instalar nada.</li>
+      <li><strong>Terraform</strong>: descargas un proyecto y lo aplicas desde tu ordenador con un token de la API. La clase queda descrita en un fichero: para altas y bajas editas la lista, <code>terraform plan</code> te enseña qué va a cambiar y <code>terraform destroy</code> la borra entera a final de curso.</li>
+      <li><strong>Una clase, un método.</strong> Si la creas con Terraform, gestiónala siempre con él: los scripts de Mover alumno, Profesores y Borrar usuarios no lo avisan y Terraform intentaría deshacer sus cambios. Lo del día a día (encender, snapshots, recoger, contraseñas, estado, uso de disco) sigue con scripts en cualquier caso.</li>
+    </ul>
+  </details>
+
+  <details class="panel desplegable">
     <summary><h2>Ten en cuenta</h2></summary>
     <ul class="notas">
       <li><strong>Al crear una máquina, el alumno debe elegir su pool</strong> en el campo «Resource Pool». Si no, Proxmox le dirá que no tiene permiso.</li>

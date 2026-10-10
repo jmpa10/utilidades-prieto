@@ -7,6 +7,7 @@ import BorrarUsuarios from '../../components/BorrarUsuarios';
     <a class="miga" href="/proxmox/">Todas las utilidades</a>
     <h1>Borrar usuarios</h1>
     <p>Elimina usuarios y pools al acabar el curso, junto con las máquinas que contengan.</p>
+    <p class="nota-centro">Si la clase se creó con Terraform, bórrala con <code>terraform destroy</code> o quita al alumno de <code>terraform.tfvars</code> y aplica.</p>
   </header>
   <BorrarUsuarios client:load />
 </Portal>

@@ -46,6 +46,18 @@ Cada script se puede usar de dos formas:
 
 Todos admiten `--dry-run` y se pueden repetir sin duplicar nada: si la clase o sus pools ya existen, se reutilizan. Al borrar una clase entera también se quitan sus permisos.
 
+### Scripts o Terraform
+
+**Crear usuarios** (clase completa) y **Repartir plantilla** pueden generar, además del script, un proyecto Terraform con el provider [`bpg/proxmox`](https://registry.terraform.io/providers/bpg/proxmox) (`src/lib/terraform/`):
+
+- `terraform-<clase>.zip`: `main.tf`, `variables.tf` y `versions.tf` son fijos; los datos de la clase y los alumnos van en `terraform.tfvars`. Crea lo mismo que el script (grupo, pools anidados, usuarios, ACLs y storage en cada pool). Los roles `Alumno` y `AlumnoISO` siguen saliendo de «Preparar Proxmox».
+- `repartir-<prefijo>.tf`: se deja en la carpeta de la clase y clona la plantilla en el pool de cada alumno (`proxmox_cloned_vm`).
+- Se ejecuta desde un PC o una VM con un token de la API en `PROXMOX_VE_API_TOKEN`; el `LEEME.md` del zip explica cómo crearlo.
+- `terraform.tfvars` y `terraform.tfstate` llevan las contraseñas en claro.
+- Una clase creada con Terraform se gestiona siempre con Terraform (altas, bajas, profesores y borrado). El resto de utilidades siguen siendo scripts.
+
+Las pruebas validan el HCL con `terraform fmt`, `validate` y `console` si Terraform está instalado; si no (por ejemplo, al construir la imagen Docker), se saltan.
+
 ## Reutilizarlo en tu centro
 
 1. Haz un fork de [jmpa10/utilidades-prieto](https://github.com/jmpa10/utilidades-prieto).

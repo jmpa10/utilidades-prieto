@@ -18,6 +18,8 @@ export interface Ajustes {
   estiloPassword: EstiloPassword;
   urlProxmox: string;
   centro: string;
+  /** Cómo prefiere aplicar los cambios: scripts para la terminal del nodo o un proyecto Terraform. */
+  metodo: 'script' | 'terraform';
 }
 
 export const AJUSTES_POR_DEFECTO: Ajustes = {
@@ -32,6 +34,7 @@ export const AJUSTES_POR_DEFECTO: Ajustes = {
   estiloPassword: 'legible',
   urlProxmox: '',
   centro: CENTRO.nombre,
+  metodo: 'script',
 };
 
 const CLAVE = 'utilidades-prieto:proxmox:ajustes';
@@ -68,8 +71,8 @@ export function recordarBridge(clase: string, bridge: string) {
   guardarAjustes({ ...a, bridges: { ...a.bridges, [clase]: bridge } });
 }
 
-export function descargar(nombre: string, contenido: string, tipo = 'text/plain') {
-  const url = URL.createObjectURL(new Blob([contenido], { type: `${tipo};charset=utf-8` }));
+export function descargar(nombre: string, contenido: string | Uint8Array<ArrayBuffer>, tipo = 'text/plain') {
+  const url = URL.createObjectURL(new Blob([contenido], { type: typeof contenido === 'string' ? `${tipo};charset=utf-8` : tipo }));
   const a = Object.assign(document.createElement('a'), { href: url, download: nombre });
   document.body.append(a);
   a.click();
